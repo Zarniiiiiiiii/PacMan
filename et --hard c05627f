@@ -1,0 +1,2 @@
+[33mc05627f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Implement ghost following algorithm with personality-based targeting: - Red ghost (Blinky) directly pursues Pac-Man - Pink ghost (Pinky) ambushes by targeting 4 tiles ahead - Cyan ghost (Inky) uses unpredictable targeting based on Blinky's position - Orange ghost (Clyde) switches between pursuit and scatter based on distance
+[33m20ff2a5[m[33m ([m[1;31morigin/master[m[33m)[m Initial commit: Working Pac-Man game with proper ghost movement and collision detection

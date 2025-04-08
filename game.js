@@ -1,6 +1,5 @@
 // Import necessary classes from other files
-import { PacMan } from './entities.js';
-import { Ghost } from './entities.js';
+import { PacMan, Ghost, GHOST_PERSONALITIES, GHOST_STATES } from './entities.js';
 import { Maze } from './maze.js';
 
 // Main Game class that handles the game loop, input, and rendering
@@ -37,10 +36,10 @@ class Game {
 
             // Initialize ghosts at their starting positions
             this.ghosts = [
-                new Ghost(tileSize * 1 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#FF0000', 'right'),    // Red ghost - top-left corner
-                new Ghost(tileSize * 18 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#00FFDE', 'left'),   // Cyan ghost - top-right corner
-                new Ghost(tileSize * 1 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#FFB8DE', 'right'),  // Pink ghost - bottom-left corner
-                new Ghost(tileSize * 18 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#FFB847', 'left')   // Orange ghost - bottom-right corner
+                new Ghost(tileSize * 1 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#FF0000', GHOST_PERSONALITIES.BLINKY, 'right'),    // Red ghost - Blinky
+                new Ghost(tileSize * 18 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#FFB8DE', GHOST_PERSONALITIES.PINKY, 'left'),   // Pink ghost - Pinky
+                new Ghost(tileSize * 1 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#00FFDE', GHOST_PERSONALITIES.INKY, 'right'),   // Cyan ghost - Inky
+                new Ghost(tileSize * 18 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#FFB847', GHOST_PERSONALITIES.CLYDE, 'left')   // Orange ghost - Clyde
             ];
             
             // Set up event listeners
@@ -107,10 +106,10 @@ class Game {
             const newTileSize = this.maze.tileSize;
             this.pacman = new PacMan(newTileSize * 1 + newTileSize/2, newTileSize * 1 + newTileSize/2, newTileSize/2);
             this.ghosts = [
-                new Ghost(newTileSize * 1 + newTileSize/2, newTileSize * 1 + newTileSize/2, newTileSize/2, '#FF0000', 'right'),    // Red ghost - top-left corner
-                new Ghost(newTileSize * 18 + newTileSize/2, newTileSize * 1 + newTileSize/2, newTileSize/2, '#00FFDE', 'left'),   // Cyan ghost - top-right corner
-                new Ghost(newTileSize * 1 + newTileSize/2, newTileSize * 18 + newTileSize/2, newTileSize/2, '#FFB8DE', 'right'),  // Pink ghost - bottom-left corner
-                new Ghost(newTileSize * 18 + newTileSize/2, newTileSize * 18 + newTileSize/2, newTileSize/2, '#FFB847', 'left')   // Orange ghost - bottom-right corner
+                new Ghost(newTileSize * 1 + newTileSize/2, newTileSize * 1 + newTileSize/2, newTileSize/2, '#FF0000', GHOST_PERSONALITIES.BLINKY, 'right'),    // Red ghost - Blinky
+                new Ghost(newTileSize * 18 + newTileSize/2, newTileSize * 1 + newTileSize/2, newTileSize/2, '#FFB8DE', GHOST_PERSONALITIES.PINKY, 'left'),   // Pink ghost - Pinky
+                new Ghost(newTileSize * 1 + newTileSize/2, newTileSize * 18 + newTileSize/2, newTileSize/2, '#00FFDE', GHOST_PERSONALITIES.INKY, 'right'),   // Cyan ghost - Inky
+                new Ghost(newTileSize * 18 + newTileSize/2, newTileSize * 18 + newTileSize/2, newTileSize/2, '#FFB847', GHOST_PERSONALITIES.CLYDE, 'left')   // Orange ghost - Clyde
             ];
             
             console.log('Canvas resized:', {
@@ -239,8 +238,12 @@ class Game {
         // Handle input and movement
         this.handleInput();
 
-        // Update ghosts
-        this.ghosts.forEach(ghost => ghost.update(this.maze));
+        // Update Pac-Man with maze reference
+        this.pacman.update(this.maze);
+
+        // Update ghosts with maze reference and Pac-Man position
+        const blinky = this.ghosts[0]; // Blinky is needed for Inky's targeting
+        this.ghosts.forEach(ghost => ghost.update(this.maze, this.pacman, blinky));
     }
 
     // Draw everything on the canvas

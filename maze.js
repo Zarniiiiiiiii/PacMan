@@ -15,16 +15,16 @@ export class Maze {
             [1,0,0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0,0,1],  // Row 6
             [1,1,1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1,1,1],  // Row 7
             [1,1,1,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,1,1],  // Row 8
-            [1,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,1],  // Row 9 (center line without dots)
+            [0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0],  // Row 9 (center line without dots)
             [1,0,1,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,0,1],  // Row 10
             [1,0,0,1,0,1,1,1,0,1,1,0,1,1,1,0,1,0,0,1],  // Row 11
             [1,1,0,1,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,1],  // Row 12
             [1,0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,0,1],  // Row 13
             [1,0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,1,1,0,1],  // Row 14
             [1,0,0,0,0,1,1,1,0,1,1,0,1,1,1,0,0,0,0,1],  // Row 15
-            [1,1,1,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,1,1],  // Row 16
-            [1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,1,1],  // Row 17
-            [1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1],  // Row 18
+            [1,0,1,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,0,1],  // Row 16
+            [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],  // Row 17
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],  // Row 18
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]   // Bottom border
         ];
     }
@@ -71,9 +71,9 @@ export class Maze {
 
     // Check if a position collides with a wall
     checkCollision(x, y, size) {
-        // Use a fixed hitbox size based on tile size with a small buffer
-        const hitboxSize = this.tileSize * 0.45; // Increased from 0.42 to 0.45
-        const buffer = 2; // Increased buffer to prevent any clipping
+        // Use a smaller hitbox size and buffer for more precise collision detection
+        const hitboxSize = this.tileSize * 0.4; // Reduced from 0.45 to 0.4
+        const buffer = 1; // Reduced buffer from 2 to 1
         
         // Calculate the edges of Pac-Man's hitbox
         const left = x - hitboxSize + buffer;
@@ -108,5 +108,29 @@ export class Maze {
     // Get the size of each tile
     getTileSize() {
         return this.tileSize;
+    }
+
+    // Handle tunnel warping for entities
+    handleTunnels(entity) {
+        const ROW_FOR_TUNNELS = 9; // Row 9 (0-based index)
+        const TUNNEL_ENTRANCE_LEFT = 0;
+        const TUNNEL_ENTRANCE_RIGHT = this.maze[ROW_FOR_TUNNELS].length - 1;
+        const TUNNEL_LEFT_X = TUNNEL_ENTRANCE_LEFT * this.tileSize + this.tileSize/2;
+        const TUNNEL_RIGHT_X = TUNNEL_ENTRANCE_RIGHT * this.tileSize + this.tileSize/2;
+
+        // Check if entity is in the tunnel row
+        const entityTileY = Math.floor(entity.y / this.tileSize);
+        if (entityTileY === ROW_FOR_TUNNELS) {
+            // Warp from left to right
+            if (entity.x <= TUNNEL_LEFT_X + this.tileSize/2 && entity.direction === 'left') {
+                console.log('Warping from left to right');
+                entity.x = TUNNEL_RIGHT_X - this.tileSize/2;
+            }
+            // Warp from right to left
+            else if (entity.x >= TUNNEL_RIGHT_X - this.tileSize/2 && entity.direction === 'right') {
+                console.log('Warping from right to left');
+                entity.x = TUNNEL_LEFT_X + this.tileSize/2;
+            }
+        }
     }
 } 
