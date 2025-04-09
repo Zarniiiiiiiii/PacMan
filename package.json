@@ -1,0 +1,21 @@
+{
+  "name": "pacman-web-game",
+  "version": "1.0.0",
+  "description": "A web-based Pac-Man game built with JavaScript and HTML5 Canvas",
+  "main": "index.html",
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build index.html"
+  },
+  "keywords": [
+    "pacman",
+    "game",
+    "javascript",
+    "canvas"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "parcel": "^2.10.3"
+  }
+} 
