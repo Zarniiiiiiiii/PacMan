@@ -31,31 +31,79 @@ export class Maze {
 
     // Draw the maze on the canvas
     draw(ctx) {
+        // Remove border drawing
+        // ctx.strokeStyle = '#FFFFFF';
+        // ctx.lineWidth = 8;  // Overlay with an 8-pixel white line
+        // ctx.strokeRect(4, 4, this.maze[0].length * this.tileSize - 8, this.maze.length * this.tileSize - 8);
+
+        // Set line style for walls
+        ctx.lineWidth = 2;            // Line width for walls
+
         // Loop through each tile in the maze
         for (let y = 0; y < this.maze.length; y++) {
             for (let x = 0; x < this.maze[y].length; x++) {
                 const tile = this.maze[y][x];
+                const tileX = x * this.tileSize;
+                const tileY = y * this.tileSize;
                 
-                // Draw walls
+                // Draw walls as lines
                 if (tile === 1) {
-                    ctx.fillStyle = '#0000FF';  // Blue walls
-                    ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                    // Set color for all maze walls
+                    ctx.strokeStyle = '#0000FF';
+
+                    // Check adjacent tiles to determine which walls to draw
+                    const left = x > 0 ? this.maze[y][x-1] : 1;
+                    const right = x < this.maze[y].length - 1 ? this.maze[y][x+1] : 1;
+                    const top = y > 0 ? this.maze[y-1][x] : 1;
+                    const bottom = y < this.maze.length - 1 ? this.maze[y+1][x] : 1;
+
+                    // Draw top wall if there's no wall above
+                    if (top !== 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(tileX, tileY + 1);
+                        ctx.lineTo(tileX + this.tileSize, tileY + 1);
+                        ctx.stroke();
+                    }
+
+                    // Draw right wall if there's no wall to the right
+                    if (right !== 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(tileX + this.tileSize - 1, tileY);
+                        ctx.lineTo(tileX + this.tileSize - 1, tileY + this.tileSize);
+                        ctx.stroke();
+                    }
+
+                    // Draw bottom wall if there's no wall below
+                    if (bottom !== 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(tileX, tileY + this.tileSize - 1);
+                        ctx.lineTo(tileX + this.tileSize, tileY + this.tileSize - 1);
+                        ctx.stroke();
+                    }
+
+                    // Draw left wall if there's no wall to the left
+                    if (left !== 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(tileX + 1, tileY);
+                        ctx.lineTo(tileX + 1, tileY + this.tileSize);
+                        ctx.stroke();
+                    }
                 } 
                 // Draw paths with dots
                 else if (tile === 0) {
                     // Draw black background for path
                     ctx.fillStyle = '#000';
-                    ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                    ctx.fillRect(tileX, tileY, this.tileSize, this.tileSize);
                     
                     // Draw white dot
                     ctx.fillStyle = '#FFF';
                     ctx.beginPath();
                     ctx.arc(
-                        x * this.tileSize + this.tileSize/2,  // Center X
-                        y * this.tileSize + this.tileSize/2,  // Center Y
-                        2,                                    // Dot radius
-                        0,                                    // Start angle
-                        Math.PI * 2                          // End angle (full circle)
+                        tileX + this.tileSize/2,  // Center X
+                        tileY + this.tileSize/2,  // Center Y
+                        2,                        // Dot radius
+                        0,                        // Start angle
+                        Math.PI * 2              // End angle (full circle)
                     );
                     ctx.fill();
                 }
@@ -63,7 +111,7 @@ export class Maze {
                 else if (tile === 2) {
                     // Draw black background for path
                     ctx.fillStyle = '#000';
-                    ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                    ctx.fillRect(tileX, tileY, this.tileSize, this.tileSize);
                 }
             }
         }
