@@ -19,5 +19,6 @@
   "license": "ISC",
   "devDependencies": {
     "parcel": "^2.10.3"
-  }
+  },
+  "//": "Triggering new Vercel deployment"
 } 
