@@ -1,12 +1,18 @@
 {
   "version": 2,
-  "builds": [
+  "headers": [
     {
-      "src": "index.html",
-      "use": "@vercel/static"
+      "source": "/(.*\\.js)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        }
+      ]
     }
   ],
   "routes": [
-    { "src": "/.*", "dest": "index.html" }
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/index.html" }
   ]
 } 

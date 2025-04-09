@@ -1,12 +1,13 @@
 {
   "name": "pacman-web-game",
   "version": "1.0.0",
-  "description": "A web-based Pac-Man game built with JavaScript and HTML5 Canvas",
+  "description": "A web-based Pac-Man game",
   "main": "index.html",
   "scripts": {
     "start": "parcel serve index.html",
-    "build": "parcel build index.html --public-url ./",
-    "vercel-build": "parcel build index.html --public-url ./"
+    "build": "parcel build index.html --public-url ./ --no-content-hash",
+    "vercel-build": "parcel build index.html --public-url ./ --no-content-hash",
+    "test:mime": "node -e \"const fs = require('fs'); const path = require('path'); const files = fs.readdirSync('dist'); const jsFile = files.find(f => f.startsWith('game.') && f.endsWith('.js')); if (!jsFile) process.exit(1); const content = fs.readFileSync(path.join('dist', jsFile), 'utf8'); process.exit(content.includes('parcelRequire') ? 0 : 1);\""
   },
   "keywords": [
     "pacman",
@@ -15,7 +16,7 @@
     "canvas"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "ISC",
   "devDependencies": {
     "parcel": "^2.10.3"
   }
