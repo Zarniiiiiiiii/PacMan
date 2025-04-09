@@ -1,5 +1,5 @@
 // Import necessary classes from other files
-import { PacMan, Ghost, GHOST_PERSONALITIES } from './entities.js';
+import { PacMan, Ghost, GHOST_PERSONALITIES, GHOST_STATES } from './entities.js';
 import { Maze } from './maze.js';
 
 // Main Game class that handles the game loop, input, and rendering
@@ -237,6 +237,9 @@ class Game {
     update(deltaTime) {
         // Handle input and movement
         this.handleInput();
+
+        // Update Pac-Man with maze reference
+        this.pacman.update(this.maze);
 
         // Update ghosts with maze reference and Pac-Man position
         const blinky = this.ghosts[0]; // Blinky is needed for Inky's targeting

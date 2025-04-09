@@ -39,14 +39,17 @@ export class PacMan {
     }
 
     // Update Pac-Man's state
-    update() {
+    update(maze) {
         // Toggle mouth animation
         this.mouthOpen = !this.mouthOpen;
+        
+        // Handle tunnel warping
+        maze.handleTunnels(this);
     }
 }
 
 // Define ghost states
-const GHOST_STATES = {
+export const GHOST_STATES = {
     SCATTER: 0,    // Moves to corner
     CHASE: 1,      // Targets Pac-Man
     FRIGHTENED: 2, // Runs away (blue)
@@ -146,10 +149,18 @@ export class Ghost {
                     this.x - pacman.x,
                     this.y - pacman.y
                 );
+                // If far from Pac-Man, chase him; if close, go to scatter corner
                 if (distance > 8 * tileSize) {
                     return { x: pacman.x, y: pacman.y };
+                } else {
+                    // When close to Pac-Man, move to scatter corner but with some randomness
+                    const scatterTarget = this.scatterTarget;
+                    const randomOffset = Math.random() * 2 - 1; // Random value between -1 and 1
+                    return {
+                        x: scatterTarget.x * tileSize + tileSize/2 + randomOffset * tileSize,
+                        y: scatterTarget.y * tileSize + tileSize/2 + randomOffset * tileSize
+                    };
                 }
-                return this.scatterTarget;
         }
     }
 
@@ -272,6 +283,9 @@ export class Ghost {
             this.x = nextX;
             this.y = nextY;
         }
+
+        // Handle tunnel warping
+        maze.handleTunnels(this);
     }
 
     draw(ctx) {
