@@ -149,8 +149,9 @@ export class Ghost {
         this.exitDelay = 2;    // New property to track exit delay
         this.scatterStartTime = 0; // Track when scatter mode started
         this.scatterDuration = 4; // 4 seconds scatter duration
+        this.frightenedTimer = 0; // Track frightened state duration
+        this.frightenedDuration = 5; // 5 seconds frightened duration
         this.target = { x: 9, y: 9 };  // Initial target at ghost house center
-        this.frightenedTimer = 0;
         this.scatterTimer = 0;
         this.scatterPhase = 0;
         this.scatterTargets = [
@@ -296,13 +297,21 @@ export class Ghost {
         if (!this.canExit) {
             if (gameTime >= this.exitDelay) {
                 this.canExit = true;
-                this.scatterStartTime = gameTime; // Start scatter mode when exiting
+                this.scatterStartTime = gameTime;
                 this.state = 'scatter';
             } else {
-                // Reset position to ghost house if not time to exit
                 this.x = 9 * maze.tileSize + maze.tileSize/2;
                 this.y = 9 * maze.tileSize + maze.tileSize/2;
                 return;
+            }
+        }
+
+        // Handle frightened state
+        if (this.state === 'frightened') {
+            this.frightenedTimer += 1/60; // Assuming 60 FPS
+            if (this.frightenedTimer >= this.frightenedDuration) {
+                this.state = 'normal';
+                this.frightenedTimer = 0;
             }
         }
 
@@ -360,53 +369,88 @@ export class Ghost {
         maze.handleTunnels(this);
     }
 
+    // Draw ghost
     draw(ctx) {
-        // Save the current context state
         ctx.save();
-        
-        // Move to ghost's position
         ctx.translate(this.x, this.y);
-        
-        // Set ghost color based on state
+
+        // Set color based on state
         if (this.state === 'frightened') {
-            ctx.fillStyle = '#0000FF'; // Blue when frightened
+            // Flash between blue and white when frightened
+            const flashRate = 0.2; // How fast the color flashes
+            const isFlashing = Math.floor(this.frightenedTimer / flashRate) % 2 === 0;
+            ctx.fillStyle = isFlashing ? '#FFFFFF' : '#0000FF';
+        } else if (this.state === 'eaten') {
+            ctx.fillStyle = '#FFFFFF'; // White when eaten
         } else {
             ctx.fillStyle = this.color;
         }
 
         // Draw ghost body
-        const bodyRadius = this.size * 0.8;
         ctx.beginPath();
-        ctx.arc(0, 0, bodyRadius, Math.PI, 0, false);
-        ctx.lineTo(bodyRadius, bodyRadius);
-        ctx.lineTo(-bodyRadius, bodyRadius);
+        ctx.arc(0, 0, this.size/2, Math.PI, 0, false);
+        ctx.lineTo(this.size/2, this.size/2);
+        ctx.lineTo(-this.size/2, this.size/2);
         ctx.closePath();
         ctx.fill();
 
-        // Draw ghost eyes
-        const eyeRadius = bodyRadius * 0.2;
-        const eyeOffsetX = bodyRadius * 0.3;
-        const eyeOffsetY = -bodyRadius * 0.2;
+        // Draw eyes
+        const eyeSize = this.size/4;
+        const eyeOffset = this.size/4;
         
-        // White part of eyes
-        ctx.fillStyle = 'white';
+        // Left eye
+        ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(-eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
-        ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+        ctx.arc(-eyeOffset, -eyeOffset, eyeSize, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Right eye
+        ctx.beginPath();
+        ctx.arc(eyeOffset, -eyeOffset, eyeSize, 0, Math.PI * 2);
         ctx.fill();
 
         // Pupils
-        ctx.fillStyle = 'black';
-        const pupilRadius = eyeRadius * 0.5;
-        const pupilOffsetX = eyeOffsetX * 0.5;
-        const pupilOffsetY = eyeOffsetY * 0.5;
-        
+        ctx.fillStyle = '#000000';
+        const pupilSize = eyeSize/2;
+        const pupilOffset = eyeSize/2;
+
+        // Determine pupil direction based on ghost's direction
+        let leftPupilX = -eyeOffset;
+        let leftPupilY = -eyeOffset;
+        let rightPupilX = eyeOffset;
+        let rightPupilY = -eyeOffset;
+
+        if (this.state !== 'frightened') {
+            switch(this.direction) {
+                case 'up':
+                    leftPupilY -= pupilOffset;
+                    rightPupilY -= pupilOffset;
+                    break;
+                case 'down':
+                    leftPupilY += pupilOffset;
+                    rightPupilY += pupilOffset;
+                    break;
+                case 'left':
+                    leftPupilX -= pupilOffset;
+                    rightPupilX -= pupilOffset;
+                    break;
+                case 'right':
+                    leftPupilX += pupilOffset;
+                    rightPupilX += pupilOffset;
+                    break;
+            }
+        }
+
+        // Draw left pupil
         ctx.beginPath();
-        ctx.arc(-pupilOffsetX, pupilOffsetY, pupilRadius, 0, Math.PI * 2);
-        ctx.arc(pupilOffsetX, pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+        ctx.arc(leftPupilX, leftPupilY, pupilSize, 0, Math.PI * 2);
         ctx.fill();
 
-        // Restore the context state
+        // Draw right pupil
+        ctx.beginPath();
+        ctx.arc(rightPupilX, rightPupilY, pupilSize, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.restore();
     }
 } 

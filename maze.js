@@ -4,7 +4,7 @@ export class Maze {
         // Size of each tile in pixels
         this.tileSize = 20;
         
-        // Maze layout (1 = wall, 0 = path with dot, 2 = path without dot)
+        // Maze layout (1 = wall, 0 = path with dot, 2 = path without dot, 4 = special point)
         this.maze = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],  // Top border
             [1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1],  // Row 1
@@ -27,6 +27,48 @@ export class Maze {
             [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],  // Row 18
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]   // Bottom border
         ];
+
+        // Add special points (cherries) in random positions
+        this.addSpecialPoints();
+    }
+
+    // Add special points to the maze
+    addSpecialPoints() {
+        // Define the 4 zones of the maze
+        const zones = [
+            { // Top-left zone
+                startX: 1, endX: 9,
+                startY: 1, endY: 9
+            },
+            { // Top-right zone
+                startX: 10, endX: 18,
+                startY: 1, endY: 9
+            },
+            { // Bottom-left zone
+                startX: 1, endX: 9,
+                startY: 10, endY: 18
+            },
+            { // Bottom-right zone
+                startX: 10, endX: 18,
+                startY: 10, endY: 18
+            }
+        ];
+
+        // Add one special point in each zone
+        zones.forEach(zone => {
+            let pointAdded = false;
+            while (!pointAdded) {
+                // Generate random coordinates within the zone
+                const x = Math.floor(Math.random() * (zone.endX - zone.startX + 1)) + zone.startX;
+                const y = Math.floor(Math.random() * (zone.endY - zone.startY + 1)) + zone.startY;
+
+                // Only add special point on empty paths (tile value 0)
+                if (this.maze[y][x] === 0) {
+                    this.maze[y][x] = 4; // 4 represents a special point
+                    pointAdded = true;
+                }
+            }
+        });
     }
 
     // Draw the maze on the canvas
@@ -102,6 +144,24 @@ export class Maze {
                         tileX + this.tileSize/2,  // Center X
                         tileY + this.tileSize/2,  // Center Y
                         2,                        // Dot radius
+                        0,                        // Start angle
+                        Math.PI * 2              // End angle (full circle)
+                    );
+                    ctx.fill();
+                }
+                // Draw special points (cherries)
+                else if (tile === 4) {
+                    // Draw black background for path
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(tileX, tileY, this.tileSize, this.tileSize);
+                    
+                    // Draw cherry
+                    ctx.fillStyle = '#FF0000'; // Red color for cherry
+                    ctx.beginPath();
+                    ctx.arc(
+                        tileX + this.tileSize/2,  // Center X
+                        tileY + this.tileSize/2,  // Center Y
+                        4,                        // Cherry radius
                         0,                        // Start angle
                         Math.PI * 2              // End angle (full circle)
                     );

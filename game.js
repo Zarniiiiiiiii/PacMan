@@ -254,12 +254,25 @@ class Game {
         const pacmanTileX = Math.floor(this.pacman.x / tileSize);
         const pacmanTileY = Math.floor(this.pacman.y / tileSize);
 
-        // Check if Pac-Man is on a dot (value 0 in maze array)
-        if (this.maze.maze[pacmanTileY][pacmanTileX] === 0) {
+        // Check if Pac-Man is on a dot or special point
+        const tile = this.maze.maze[pacmanTileY][pacmanTileX];
+        if (tile === 0) {
             // Change the dot to an empty path (value 2)
             this.maze.maze[pacmanTileY][pacmanTileX] = 2;
             // Add points for collecting a dot
             this.updateScore(10);
+        } else if (tile === 4) {
+            // Change the special point to an empty path (value 2)
+            this.maze.maze[pacmanTileY][pacmanTileX] = 2;
+            // Add points for collecting a special point
+            this.updateScore(100);
+            // Make all ghosts frightened
+            this.ghosts.forEach(ghost => {
+                if (ghost.state !== 'eaten') {  // Only affect ghosts that aren't already eaten
+                    ghost.state = 'frightened';
+                    ghost.frightenedTimer = 0;  // Reset the frightened timer
+                }
+            });
         }
     }
 
