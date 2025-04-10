@@ -147,7 +147,7 @@ class Game {
             this.debugOverlay.className = 'debug-overlay';
             document.body.appendChild(this.debugOverlay);
 
-            // Draw initial state
+            // Draw initial state once, but don't start the game loop
             this.draw();
         } catch (error) {
             console.error('Game initialization error:', error);
@@ -340,6 +340,7 @@ class Game {
             this.gameWon = false;
             this.score = 0;
             this.updateScore(0);
+            this.lastTime = performance.now(); // Initialize lastTime when game starts
             requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
         }
     }
@@ -413,10 +414,12 @@ class Game {
         // Check for dot collection
         this.checkDotCollection();
 
-        // Update ghosts
-        this.ghosts.forEach(ghost => {
-            ghost.update(this.maze, this.pacman, this.gameTime);
-        });
+        // Only update ghosts if the game has started
+        if (this.gameStarted) {
+            this.ghosts.forEach(ghost => {
+                ghost.update(this.maze, this.pacman, this.gameTime);
+            });
+        }
 
         // Check for collisions
         this.checkCollisions();
@@ -427,7 +430,7 @@ class Game {
 
     // Check for collisions between Pac-Man and ghosts
     checkCollisions() {
-        if (this.isGameOver) return;
+        if (this.isGameOver || !this.gameStarted) return;
 
         const pacmanSize = this.pacman.size;
         const ghostSize = 15;
@@ -474,6 +477,13 @@ class Game {
 
     // Main game loop
     gameLoop(timestamp) {
+        // Only run the game loop if the game has started
+        if (!this.gameStarted) {
+            // Just draw the initial state without updating
+            this.draw();
+            return;
+        }
+
         // Calculate time since last frame
         const deltaTime = timestamp - this.lastTime;
         this.lastTime = timestamp;
