@@ -177,90 +177,173 @@ body {
     }
 }
 
-.game-over-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-}
-
-.game-over-text {
-    color: #FF0000;
-    font-size: 4em;
-    text-shadow: 0 0 10px yellow;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-.restart-button {
-    padding: 15px 30px;
-    font-size: 1.5em;
-    background: #FFFF00;
-    border: none;
-    border-radius: 5px;
-    margin-top: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.restart-button:hover {
-    background: #FFD700;
-    transform: scale(1.05);
-}
-
-.restart-button:focus {
-    outline: 2px solid #FF0000;
-    outline-offset: 2px;
+/* Enhanced Mobile First Styles */
+:root {
+    --life-icon-size: clamp(9px, 2vmin, 16px);
+    --game-over-font-base: clamp(2.5rem, 12vmin, 5rem);
 }
 
 .lives-container {
     display: flex;
-    gap: 17px;
+    gap: clamp(10px, 2.5vmin, 20px);
+    position: fixed;
+    top: 15vh;
+    right: max(4vw, env(safe-area-inset-right));
     z-index: 10;
-    position: absolute;
-    left: calc(50% - 200px);
-    top: 25px;
-    transform: translateX(-50%);
+    contain: layout paint;
+    padding: 1vmin 2vmin;
+    background: rgba(0,0,0,0.3);
+    border-radius: 100px;
+    backdrop-filter: blur(2px);
+    margin: 0;
 }
 
 .life-icon {
-    width: 20px;
-    height: 20px;
-    position: relative;
-    transform: rotate(45deg);
+    width: var(--life-icon-size);
+    height: var(--life-icon-size);
     background: #FF0000;
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
+    transform: rotate(45deg);
+    transition: all 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    filter: drop-shadow(0 0 2px yellow);
+    position: relative;
+    margin: 0;
 }
 
 .life-icon:before,
 .life-icon:after {
     content: '';
-    width: 20px;
-    height: 20px;
+    width: var(--life-icon-size);
+    height: var(--life-icon-size);
     position: absolute;
     border-radius: 50%;
     background: #FF0000;
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+    box-shadow: none;
+    margin: 0;
 }
 
 .life-icon:before {
-    left: -10px;
+    left: calc(var(--life-icon-size) * -0.5);
+    top: 0;
 }
 
 .life-icon:after {
-    top: -10px;
+    top: calc(var(--life-icon-size) * -0.5);
+    left: 0;
+}
+
+/* Enhanced Game Over Overlay */
+.game-over-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.95) 100%);
+    z-index: 1000;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    backdrop-filter: blur(8px);
+}
+
+.game-over-content {
+    display: grid;
+    gap: 4vmin;
+    text-align: center;
+    max-width: 90vw;
+}
+
+.game-over-text {
+    color: #FF0000;
+    font-size: var(--game-over-font-base);
+    text-shadow: 0 0 15px yellow, 0 0 30px rgba(255,255,0,0.5);
+    line-height: 1.1;
+    animation: pulse 1.25s infinite alternate;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.9; }
+    100% { transform: scale(1.05); opacity: 1; }
+}
+
+/* Enhanced Restart Button */
+.restart-button {
+    --btn-padding: clamp(12px, 3vmin, 24px);
+    padding: var(--btn-padding) calc(var(--btn-padding) * 2);
+    font-size: clamp(1.1rem, 4vmin, 2rem);
+    background: linear-gradient(to bottom, #FFFF00 0%, #FFCC00 100%);
+    border: none;
+    border-radius: 100px;
+    margin-top: 4vmin;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: max(160px, 40vmin);
+    box-shadow: 0 4px 15px rgba(255, 255, 0, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.restart-button::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to bottom right,
+        rgba(255,255,255,0) 45%,
+        rgba(255,255,255,0.8) 50%,
+        rgba(255,255,255,0) 55%
+    );
+    transform: rotate(30deg);
+    transition: all 0.4s;
+}
+
+.restart-button:hover::after {
+    left: 100%;
+}
+
+/* Responsive Adjustments */
+@media (orientation: portrait) and (max-height: 700px) {
+    .lives-container {
+        top: auto;
+        bottom: 10vh;
+        right: 50%;
+        transform: translateX(50%);
+    }
+    
+    .game-over-content {
+        gap: 2vmin;
+    }
+}
+
+/* Tablet Landscape Optimization */
+@media (min-width: 768px) and (orientation: landscape) {
+    .lives-container {
+        top: 3vmin;
+        right: 3vmin;
+    }
+    
+    .game-over-text {
+        text-shadow: 0 0 20px yellow;
+    }
+}
+
+/* Debug Mode Enhancements */
+.debug-viewport {
+    position: fixed;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    right: max(10px, env(safe-area-inset-right));
+    background: rgba(0, 0, 0, 0.8);
+    color: lime;
+    padding: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(10px, 2vmin, 14px);
+    border: 1px solid lime;
+    z-index: 9999;
+    display: grid;
+    gap: 4px;
 }
 
 /* Add pixelated effect */
