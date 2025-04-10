@@ -120,6 +120,22 @@ class Game {
                 }
             });
 
+            // Initialize lives and game over state
+            this.lives = 3;
+            this.isGameOver = false;
+            this.pacmanInvulnerable = false;
+
+            // Create lives display
+            this.livesContainer = document.createElement('div');
+            this.livesContainer.className = 'lives-container';
+            document.body.appendChild(this.livesContainer);
+            this.updateLivesDisplay();
+
+            // Add debug overlay
+            this.debugOverlay = document.createElement('div');
+            this.debugOverlay.className = 'debug-overlay';
+            document.body.appendChild(this.debugOverlay);
+
             // Draw initial state
             this.draw();
         } catch (error) {
@@ -318,61 +334,31 @@ class Game {
     // Reset the game
     resetGame() {
         // Reset game state
-        this.gameStarted = false;
-        this.gameWon = false;
+        this.lives = 3;
+        this.isGameOver = false;
+        this.pacmanInvulnerable = false;
         this.score = 0;
         this.updateScore(0);
+        this.updateLivesDisplay();
+
+        // Reset positions
+        this.resetPositions();
 
         // Reset maze
         this.maze = new Maze();
-        const tileSize = this.maze.getTileSize();
-
-        // Reset Pac-Man
-        this.pacman = new PacMan(tileSize * 1 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2);
-
-        // Reset ghosts with proper exit delays
-        this.ghosts = [
-            { // Red ghost (Blinky) - exits first
-                ghost: new Ghost(9 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#FF0000', 'chase'),
-                exitDelay: 0
-            },
-            { // Pink ghost (Pinky) - exits second
-                ghost: new Ghost(10 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#FFB8DE', 'ambush'),
-                exitDelay: 1.5
-            },
-            { // Cyan ghost (Inky) - exits third
-                ghost: new Ghost(11 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#00FFDE', 'patrol'),
-                exitDelay: 3.0
-            },
-            { // Orange ghost (Clyde) - exits last
-                ghost: new Ghost(12 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#FFB847', 'random'),
-                exitDelay: 4.5
-            }
-        ];
-
-        // Set exit delays for each ghost
-        this.ghosts.forEach(ghostData => {
-            ghostData.ghost.exitDelay = ghostData.exitDelay;
-            ghostData.ghost.canExit = false; // Reset exit state
-            ghostData.ghost.state = 'normal'; // Reset ghost state
-        });
-
-        // Extract just the ghost objects for easier access
-        this.ghosts = this.ghosts.map(data => data.ghost);
 
         // Reset game time
         this.gameTime = 0;
 
-        // Resize canvas to proper dimensions
-        this.resizeCanvas();
-
-        // Clear any pending respawn timers
+        // Clear any pending timers
         this.ghosts.forEach(ghost => {
             if (ghost.respawnTimer) {
                 clearTimeout(ghost.respawnTimer);
             }
-            ghost.debug = this.debugMode;
         });
+
+        // Resize canvas to proper dimensions
+        this.resizeCanvas();
 
         // Redraw the initial state
         this.draw();
@@ -400,8 +386,10 @@ class Game {
 
     // Update game state
     update() {
+        if (this.isGameOver) return;
+
         // Update game time
-        this.gameTime += 1/60; // Assuming 60 FPS
+        this.gameTime += 1/60;
 
         // Handle input for Pac-Man movement
         this.handleInput();
@@ -412,17 +400,22 @@ class Game {
         // Check for dot collection
         this.checkDotCollection();
 
-        // Update ghosts in the correct order
+        // Update ghosts
         this.ghosts.forEach(ghost => {
             ghost.update(this.maze, this.pacman, this.gameTime);
         });
 
         // Check for collisions
         this.checkCollisions();
+
+        // Update debug overlay
+        this.updateDebugOverlay();
     }
 
     // Check for collisions between Pac-Man and ghosts
     checkCollisions() {
+        if (this.isGameOver) return;
+
         const pacmanSize = this.pacman.size;
         const ghostSize = 15;
 
@@ -443,9 +436,9 @@ class Game {
                     this.score += 200;
                     this.updateScore(this.score);
                     console.log(`Ghost ${ghost.color} eaten, respawning in 3s`);
-                } else if (ghost.state !== 'eaten') {
+                } else if (ghost.state !== 'eaten' && !this.pacmanInvulnerable) {
                     // Pac-Man is caught
-                    this.resetGame();
+                    this.handleDeath();
                 }
             }
         });
@@ -486,6 +479,96 @@ class Game {
         
         // Request next frame
         requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
+    }
+
+    updateLivesDisplay() {
+        this.livesContainer.innerHTML = '';
+        for (let i = 0; i < this.lives; i++) {
+            const lifeIcon = document.createElement('div');
+            lifeIcon.className = 'life-icon';
+            this.livesContainer.appendChild(lifeIcon);
+        }
+    }
+
+    updateDebugOverlay() {
+        if (this.debugMode) {
+            this.debugOverlay.innerHTML = `
+                Lives: ${this.lives}<br>
+                Game Over: ${this.isGameOver}<br>
+                Invulnerable: ${this.pacmanInvulnerable}<br>
+                Score: ${this.score}
+            `;
+            this.debugOverlay.style.display = 'block';
+        } else {
+            this.debugOverlay.style.display = 'none';
+        }
+    }
+
+    handleDeath() {
+        if (this.pacmanInvulnerable) return;
+
+        this.lives--;
+        this.updateLivesDisplay();
+        console.log(`Pac-Man died! Lives remaining: ${this.lives}`);
+
+        if (this.lives <= 0) {
+            this.gameOver();
+        } else {
+            this.resetPositions();
+            this.pacmanInvulnerable = true;
+            setTimeout(() => {
+                this.pacmanInvulnerable = false;
+            }, 2000);
+        }
+    }
+
+    resetPositions() {
+        const tileSize = this.maze.getTileSize();
+        
+        // Reset Pac-Man position
+        this.pacman.x = tileSize * 1 + tileSize/2;
+        this.pacman.y = tileSize * 1 + tileSize/2;
+        this.pacman.direction = null;
+        this.pacman.nextDirection = null;
+
+        // Reset ghosts
+        this.ghosts.forEach(ghost => {
+            ghost.x = 9 * tileSize + tileSize/2;
+            ghost.y = 9 * tileSize + tileSize/2;
+            ghost.state = 'normal';
+            ghost.canExit = false;
+            if (ghost.respawnTimer) {
+                clearTimeout(ghost.respawnTimer);
+            }
+        });
+    }
+
+    gameOver() {
+        this.isGameOver = true;
+        console.log('Game Over! Final Score:', this.score);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'game-over-overlay';
+        overlay.innerHTML = `
+            <h1 class="game-over-text">GAME OVER</h1>
+            <div class="final-score">Final Score: ${this.score}</div>
+            <button class="restart-button" id="restart-btn">PLAY AGAIN</button>
+        `;
+        document.body.appendChild(overlay);
+
+        const restartBtn = document.getElementById('restart-btn');
+        restartBtn.addEventListener('click', () => {
+            this.resetGame();
+            overlay.remove();
+        });
+
+        // Make button keyboard accessible
+        restartBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                this.resetGame();
+                overlay.remove();
+            }
+        });
     }
 }
 
