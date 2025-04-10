@@ -24,6 +24,20 @@ class Game {
                 throw new Error('Score display element not found');
             }
 
+            // Initialize game state
+            this.gameWon = false;
+            this.gameStarted = false;
+
+            // Initialize buttons
+            this.startButton = document.getElementById('startButton');
+            this.resetButton = document.getElementById('resetButton');
+            this.devButton = document.getElementById('devButton');
+
+            // Add button event listeners
+            this.startButton.addEventListener('click', () => this.startGame());
+            this.resetButton.addEventListener('click', () => this.resetGame());
+            this.devButton.addEventListener('click', () => this.collectAllDots());
+
             console.log('Canvas initialized:', {
                 width: this.canvas.width,
                 height: this.canvas.height
@@ -64,8 +78,8 @@ class Game {
                 console.log('Key released:', e.key); // Debug log
             });
 
-            // Start the game loop
-            requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
+            // Draw initial state
+            this.draw();
         } catch (error) {
             console.error('Game initialization error:', error);
         }
@@ -165,7 +179,11 @@ class Game {
     // Update score and display
     updateScore(points) {
         this.score += points;
-        this.scoreDisplay.textContent = this.score;
+        if (this.gameWon) {
+            this.scoreDisplay.innerHTML = '<span class="win-text">YOU WIN!</span><br>Final Score: ' + this.score;
+        } else {
+            this.scoreDisplay.textContent = this.score;
+        }
     }
 
     // Check for dot collection
@@ -183,20 +201,94 @@ class Game {
         }
     }
 
+    // Check for win condition
+    checkWinCondition() {
+        if (!this.gameWon && this.maze.getRemainingDots() === 0) {
+            this.gameWon = true;
+            this.updateScore(0); // Update display to show win message
+        }
+    }
+
+    // Start the game
+    startGame() {
+        if (!this.gameStarted) {
+            this.gameStarted = true;
+            this.gameWon = false;
+            this.score = 0;
+            this.updateScore(0);
+            requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
+        }
+    }
+
+    // Reset the game
+    resetGame() {
+        // Reset game state
+        this.gameStarted = false;
+        this.gameWon = false;
+        this.score = 0;
+        this.updateScore(0);
+
+        // Reset maze
+        this.maze = new Maze();
+        const tileSize = this.maze.getTileSize();
+
+        // Reset Pac-Man
+        this.pacman = new PacMan(tileSize * 1 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2);
+
+        // Reset ghosts
+        this.ghosts = [
+            new Ghost(tileSize * 1 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#FF0000', GHOST_PERSONALITIES.BLINKY, 'right'),
+            new Ghost(tileSize * 18 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#FFB8DE', GHOST_PERSONALITIES.PINKY, 'left'),
+            new Ghost(tileSize * 1 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#00FFDE', GHOST_PERSONALITIES.INKY, 'right'),
+            new Ghost(tileSize * 18 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#FFB847', GHOST_PERSONALITIES.CLYDE, 'left')
+        ];
+
+        // Resize canvas to proper dimensions
+        this.resizeCanvas();
+
+        // Redraw the initial state
+        this.draw();
+    }
+
+    // Development function to collect all dots
+    collectAllDots() {
+        if (!this.gameStarted) {
+            this.startGame();
+        }
+        
+        // Collect all dots
+        for (let y = 0; y < this.maze.maze.length; y++) {
+            for (let x = 0; x < this.maze.maze[y].length; x++) {
+                if (this.maze.maze[y][x] === 0) {
+                    this.maze.maze[y][x] = 2;
+                    this.updateScore(10);
+                }
+            }
+        }
+        
+        // Check win condition
+        this.checkWinCondition();
+    }
+
     // Update game state
     update(deltaTime) {
-        // Handle input and movement
-        this.handleInput();
+        if (this.gameStarted && !this.gameWon) {
+            // Handle input and movement
+            this.handleInput();
 
-        // Check for dot collection
-        this.checkDotCollection();
+            // Check for dot collection
+            this.checkDotCollection();
 
-        // Update Pac-Man with maze reference
-        this.pacman.update(this.maze);
+            // Update Pac-Man with maze reference
+            this.pacman.update(this.maze);
 
-        // Update ghosts with maze reference and Pac-Man position
-        const blinky = this.ghosts[0]; // Blinky is needed for Inky's targeting
-        this.ghosts.forEach(ghost => ghost.update(this.maze, this.pacman, blinky));
+            // Update ghosts with maze reference and Pac-Man position
+            const blinky = this.ghosts[0];
+            this.ghosts.forEach(ghost => ghost.update(this.maze, this.pacman, blinky));
+
+            // Check for win condition
+            this.checkWinCondition();
+        }
     }
 
     // Draw everything on the canvas

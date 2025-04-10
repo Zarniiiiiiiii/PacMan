@@ -181,4 +181,17 @@ export class Maze {
             }
         }
     }
+
+    // Count remaining dots in the maze
+    getRemainingDots() {
+        let count = 0;
+        for (let row of this.maze) {
+            for (let tile of row) {
+                if (tile === 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
 } 
