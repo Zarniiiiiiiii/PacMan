@@ -188,10 +188,30 @@ class Game {
     // Handle keyboard input for Pac-Man movement
     handleInput() {
         // Set next direction based on key presses
-        if (this.keys['ArrowUp'] || this.keys['w']) this.pacman.nextDirection = 'up';
-        if (this.keys['ArrowDown'] || this.keys['s']) this.pacman.nextDirection = 'down';
-        if (this.keys['ArrowLeft'] || this.keys['a']) this.pacman.nextDirection = 'left';
-        if (this.keys['ArrowRight'] || this.keys['d']) this.pacman.nextDirection = 'right';
+        if (this.keys['ArrowUp'] || this.keys['w']) {
+            this.pacman.nextDirection = 'up';
+            if (!this.pacman.direction) {
+                this.pacman.direction = 'up';
+            }
+        }
+        if (this.keys['ArrowDown'] || this.keys['s']) {
+            this.pacman.nextDirection = 'down';
+            if (!this.pacman.direction) {
+                this.pacman.direction = 'down';
+            }
+        }
+        if (this.keys['ArrowLeft'] || this.keys['a']) {
+            this.pacman.nextDirection = 'left';
+            if (!this.pacman.direction) {
+                this.pacman.direction = 'left';
+            }
+        }
+        if (this.keys['ArrowRight'] || this.keys['d']) {
+            this.pacman.nextDirection = 'right';
+            if (!this.pacman.direction) {
+                this.pacman.direction = 'right';
+            }
+        }
     }
 
     // Check if a tile is an intersection (has paths in multiple directions)

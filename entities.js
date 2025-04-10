@@ -6,8 +6,8 @@ export class PacMan {
         this.y = y;          // Y coordinate
         this.size = size;    // This is the collision size
         this.speed = 3;      // Movement speed in pixels per frame
-        this.direction = 'right';  // Current movement direction
-        this.nextDirection = 'right';  // Next queued direction
+        this.direction = null;  // No initial direction
+        this.nextDirection = null;  // No initial next direction
         this.visualSize = size * 0.8; // Visual size is 80% of collision size
         this.mouthOpen = true;  // Animation state for mouth
         this.mouthAngle = 0.2;  // Angle of mouth opening
@@ -40,6 +40,11 @@ export class PacMan {
 
     // Update Pac-Man's state
     update(maze) {
+        // Only update if there's a direction set
+        if (!this.direction) {
+            return;
+        }
+
         // Toggle mouth animation
         this.mouthOpen = !this.mouthOpen;
         
@@ -141,9 +146,9 @@ export class Ghost {
         this.nextDirection = 'up';
         this.state = 'normal';
         this.canExit = false;  // New property to control ghost exit
-        this.exitDelay = 0;    // New property to track exit delay
+        this.exitDelay = 2;    // New property to track exit delay
         this.scatterStartTime = 0; // Track when scatter mode started
-        this.scatterDuration = 7; // 7 seconds scatter duration
+        this.scatterDuration = 4; // 4 seconds scatter duration
         this.target = { x: 9, y: 9 };  // Initial target at ghost house center
         this.frightenedTimer = 0;
         this.scatterTimer = 0;
