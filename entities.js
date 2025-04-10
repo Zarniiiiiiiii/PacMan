@@ -137,10 +137,14 @@ export class Ghost {
         this.speed = 2;
         this.color = color;
         this.personality = personality;
-        this.state = 'chase';  // chase, scatter, frightened, eaten
-        this.target = { x: 9, y: 9 };  // Initial target at ghost house center
         this.direction = 'up';
-        this.nextDirection = null;
+        this.nextDirection = 'up';
+        this.state = 'normal';
+        this.canExit = false;  // New property to control ghost exit
+        this.exitDelay = 0;    // New property to track exit delay
+        this.scatterStartTime = 0; // Track when scatter mode started
+        this.scatterDuration = 7; // 7 seconds scatter duration
+        this.target = { x: 9, y: 9 };  // Initial target at ghost house center
         this.frightenedTimer = 0;
         this.scatterTimer = 0;
         this.scatterPhase = 0;
@@ -154,14 +158,22 @@ export class Ghost {
         this.homePosition = { x: 9, y: 9 };  // Center of the ghost house
         this.initialPosition = { x: 9, y: 9 };  // Center of the ghost house
         this.maze = null;  // Will be set when updating
-        this.canExit = false;  // New property to control ghost exit
-        this.exitDelay = 0;    // New property to track exit delay
-        this.scatterStartTime = null;
     }
 
-    getTarget(pacman) {
+    // Determine target based on personality and state
+    determineTarget(pacman) {
         if (this.state === 'scatter') {
-            return this.scatterTargets[this.scatterPhase % 4];
+            // In scatter mode, target the corner based on personality
+            switch(this.personality) {
+                case 'chase':
+                    return { x: 19 * 20, y: 0 }; // Top right corner
+                case 'ambush':
+                    return { x: 0, y: 0 }; // Top left corner
+                case 'patrol':
+                    return { x: 19 * 20, y: 19 * 20 }; // Bottom right corner
+                case 'random':
+                    return { x: 0, y: 19 * 20 }; // Bottom left corner
+            }
         }
         if (this.state === 'frightened') {
             // Run away from Pac-Man
@@ -173,7 +185,7 @@ export class Ghost {
         if (this.state === 'eaten') {
             return this.homePosition;
         }
-        
+
         // Chase behavior based on personality
         switch(this.personality) {
             case 'chase':
@@ -199,7 +211,7 @@ export class Ghost {
                     y: Math.random() * 19
                 };
             default:
-                return { x: pacman.x, y: pacman.y };
+                    return { x: pacman.x, y: pacman.y };
         }
     }
 
@@ -263,157 +275,84 @@ export class Ghost {
     }
 
     getOppositeDirection(dir) {
-        switch(dir) {
-            case 'up': return 'down';
-            case 'down': return 'up';
-            case 'left': return 'right';
-            case 'right': return 'left';
-        }
-    }
-
-    getPossibleDirections(maze) {
-        const tileX = Math.floor(this.x / maze.tileSize);
-        const tileY = Math.floor(this.y / maze.tileSize);
-        const possibleDirections = [];
-
-        // Check each direction for possible movement
-        if (maze.maze[tileY - 1][tileX] !== 1) possibleDirections.push('up');
-        if (maze.maze[tileY + 1][tileX] !== 1) possibleDirections.push('down');
-        if (maze.maze[tileY][tileX - 1] !== 1) possibleDirections.push('left');
-        if (maze.maze[tileY][tileX + 1] !== 1) possibleDirections.push('right');
-
-        // Remove the opposite direction to prevent 180-degree turns
-        const oppositeDir = this.getOppositeDirection(this.direction);
-        const index = possibleDirections.indexOf(oppositeDir);
-        if (index !== -1 && possibleDirections.length > 1) {
-            possibleDirections.splice(index, 1);
-        }
-
-        return possibleDirections;
+        const opposites = {
+            'up': 'down',
+            'down': 'up',
+            'left': 'right',
+            'right': 'left'
+        };
+        return opposites[dir];
     }
 
     update(maze, pacman, gameTime) {
-        // Store maze reference
         this.maze = maze;
-
+        
         // Handle exit timing
-        if (!this.canExit && gameTime >= this.exitDelay) {
-            this.canExit = true;
-            this.state = 'scatter';  // Enter scatter mode when exiting
-            this.scatterStartTime = gameTime;  // Start scatter timer
-        }
-
-        // If ghost can't exit yet, stay in ghost house
         if (!this.canExit) {
-            this.x = 9 * maze.tileSize + maze.tileSize/2;
-            this.y = 9 * maze.tileSize + maze.tileSize/2;
-            return;
+            if (gameTime >= this.exitDelay) {
+                this.canExit = true;
+                this.scatterStartTime = gameTime; // Start scatter mode when exiting
+                this.state = 'scatter';
+            } else {
+                // Reset position to ghost house if not time to exit
+                this.x = 9 * maze.tileSize + maze.tileSize/2;
+                this.y = 9 * maze.tileSize + maze.tileSize/2;
+                return;
+            }
         }
 
-        // Handle scatter mode timing
-        if (this.state === 'scatter') {
-            if (gameTime - this.scatterStartTime >= 7) {
-                this.state = 'chase';
-                this.scatterStartTime = null;
-            }
+        // Check if scatter mode should end
+        if (this.state === 'scatter' && gameTime - this.scatterStartTime >= this.scatterDuration) {
+            this.state = 'normal';
         }
 
         // Determine target based on personality and state
-        let target;
-        if (this.state === 'scatter') {
-            // Use scatter corners based on personality
-            switch (this.personality) {
-                case 'chase':
-                    target = { x: 19 * maze.tileSize, y: 0 }; // Top right
-                    break;
-                case 'ambush':
-                    target = { x: 0, y: 0 }; // Top left
-                    break;
-                case 'patrol':
-                    target = { x: 0, y: 19 * maze.tileSize }; // Bottom left
-                    break;
-                case 'random':
-                    target = { x: 19 * maze.tileSize, y: 19 * maze.tileSize }; // Bottom right
-                    break;
-            }
-        } else if (this.state === 'frightened') {
-            // Random movement when frightened
-            target = {
-                x: Math.floor(Math.random() * 20) * maze.tileSize,
-                y: Math.floor(Math.random() * 20) * maze.tileSize
-            };
-        } else {
-            // Normal targeting based on personality
-            target = this.getTarget(pacman);
-        }
+        const target = this.determineTarget(pacman);
 
-        // Check if ghost is near center of tile to decide on direction change
-        const tileX = Math.floor(this.x / maze.tileSize);
-        const tileY = Math.floor(this.y / maze.tileSize);
-        const centerX = tileX * maze.tileSize + maze.tileSize/2;
-        const centerY = tileY * maze.tileSize + maze.tileSize/2;
-        const distanceToCenter = Math.sqrt(
-            Math.pow(this.x - centerX, 2) + 
-            Math.pow(this.y - centerY, 2)
-        );
+        const tileSize = maze.getTileSize();
+        const tileX = Math.floor(this.x / tileSize);
+        const tileY = Math.floor(this.y / tileSize);
+        const tileCenterX = tileX * tileSize + tileSize/2;
+        const tileCenterY = tileY * tileSize + tileSize/2;
 
-        if (distanceToCenter < 2) {
-            // Choose new direction at intersections
-            const possibleDirections = this.getPossibleDirections(maze);
-            if (possibleDirections.length > 0) {
-                // Choose direction that moves toward target
-                let bestDirection = this.direction;
-                let minDistance = Infinity;
+        // Check if ghost is near the center of a tile
+        const isNearCenter = Math.abs(this.x - tileCenterX) < tileSize * 0.2 && 
+                            Math.abs(this.y - tileCenterY) < tileSize * 0.2;
 
-                for (const dir of possibleDirections) {
-                    let nextX = this.x;
-                    let nextY = this.y;
-
-                    switch (dir) {
-                        case 'up': nextY -= this.speed; break;
-                        case 'down': nextY += this.speed; break;
-                        case 'left': nextX -= this.speed; break;
-                        case 'right': nextX += this.speed; break;
-                    }
-
-                    const distance = Math.sqrt(
-                        Math.pow(nextX - target.x, 2) + 
-                        Math.pow(nextY - target.y, 2)
-                    );
-
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        bestDirection = dir;
-                    }
-                }
-
-                this.direction = bestDirection;
-            }
+        if (isNearCenter) {
+            this.direction = this.chooseDirection(target, maze);
         }
 
         // Move in current direction
         let nextX = this.x;
         let nextY = this.y;
 
-        switch (this.direction) {
-            case 'up': nextY -= this.speed; break;
-            case 'down': nextY += this.speed; break;
-            case 'left': nextX -= this.speed; break;
-            case 'right': nextX += this.speed; break;
+        switch(this.direction) {
+            case 'up':
+                nextY -= this.speed;
+                nextX = tileCenterX;
+                break;
+            case 'down':
+                nextY += this.speed;
+                nextX = tileCenterX;
+                break;
+            case 'left':
+                nextX -= this.speed;
+                nextY = tileCenterY;
+                break;
+            case 'right':
+                nextX += this.speed;
+                nextY = tileCenterY;
+                break;
         }
 
-        // Check for collisions with walls
-        const nextTileX = Math.floor(nextX / maze.tileSize);
-        const nextTileY = Math.floor(nextY / maze.tileSize);
-
-        if (maze.maze[nextTileY][nextTileX] !== 1) {
+        if (!maze.checkCollision(nextX, nextY, this.size, true)) {
             this.x = nextX;
             this.y = nextY;
         }
 
         // Handle tunnel warping
-        if (this.x < 0) this.x = 19 * maze.tileSize;
-        if (this.x > 19 * maze.tileSize) this.x = 0;
+        maze.handleTunnels(this);
     }
 
     draw(ctx) {
@@ -429,7 +368,7 @@ export class Ghost {
         } else {
             ctx.fillStyle = this.color;
         }
-        
+
         // Draw ghost body
         const bodyRadius = this.size * 0.8;
         ctx.beginPath();
@@ -438,7 +377,7 @@ export class Ghost {
         ctx.lineTo(-bodyRadius, bodyRadius);
         ctx.closePath();
         ctx.fill();
-        
+
         // Draw ghost eyes
         const eyeRadius = bodyRadius * 0.2;
         const eyeOffsetX = bodyRadius * 0.3;
@@ -450,7 +389,7 @@ export class Ghost {
         ctx.arc(-eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
         ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Pupils
         ctx.fillStyle = 'black';
         const pupilRadius = eyeRadius * 0.5;
@@ -461,7 +400,7 @@ export class Ghost {
         ctx.arc(-pupilOffsetX, pupilOffsetY, pupilRadius, 0, Math.PI * 2);
         ctx.arc(pupilOffsetX, pupilOffsetY, pupilRadius, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Restore the context state
         ctx.restore();
     }
