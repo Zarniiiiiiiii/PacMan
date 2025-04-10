@@ -17,6 +17,13 @@ class Game {
                 throw new Error('Could not get 2D context');
             }
 
+            // Initialize score
+            this.score = 0;
+            this.scoreDisplay = document.getElementById('scoreDisplay');
+            if (!this.scoreDisplay) {
+                throw new Error('Score display element not found');
+            }
+
             console.log('Canvas initialized:', {
                 width: this.canvas.width,
                 height: this.canvas.height
@@ -124,89 +131,11 @@ class Game {
 
     // Handle keyboard input for Pac-Man movement
     handleInput() {
-        const tileSize = this.maze.getTileSize();
-        
-        // Calculate current tile position and center
-        const tileX = Math.floor(this.pacman.x / tileSize);
-        const tileY = Math.floor(this.pacman.y / tileSize);
-        const tileCenterX = tileX * tileSize + tileSize/2;
-        const tileCenterY = tileY * tileSize + tileSize/2;
-        
-        // Check if Pac-Man is near the center of a tile (within 20% of tile size)
-        const isNearCenter = Math.abs(this.pacman.x - tileCenterX) < tileSize * 0.2 && 
-                            Math.abs(this.pacman.y - tileCenterY) < tileSize * 0.2;
-        
-        // Check if current tile is an intersection
-        const isIntersection = this.isIntersectionTile(tileX, tileY);
-        
-        // Allow direction changes when near center of an intersection
-        if (isNearCenter && isIntersection) {
-            if (this.keys['ArrowUp'] || this.keys['w']) this.pacman.nextDirection = 'up';
-            if (this.keys['ArrowDown'] || this.keys['s']) this.pacman.nextDirection = 'down';
-            if (this.keys['ArrowLeft'] || this.keys['a']) this.pacman.nextDirection = 'left';
-            if (this.keys['ArrowRight'] || this.keys['d']) this.pacman.nextDirection = 'right';
-        }
-
-        // Calculate next position based on next direction
-        let nextX = this.pacman.x;
-        let nextY = this.pacman.y;
-        switch(this.pacman.nextDirection) {
-            case 'up': 
-                nextY -= this.pacman.speed;
-                // Snap to center horizontally when moving vertically
-                nextX = tileCenterX;
-                break;
-            case 'down': 
-                nextY += this.pacman.speed;
-                // Snap to center horizontally when moving vertically
-                nextX = tileCenterX;
-                break;
-            case 'left': 
-                nextX -= this.pacman.speed;
-                // Snap to center vertically when moving horizontally
-                nextY = tileCenterY;
-                break;
-            case 'right': 
-                nextX += this.pacman.speed;
-                // Snap to center vertically when moving horizontally
-                nextY = tileCenterY;
-                break;
-        }
-
-        // If the next position is valid, update both direction and position
-        if (!this.maze.checkCollision(nextX, nextY, this.pacman.size)) {
-            this.pacman.direction = this.pacman.nextDirection;
-            this.pacman.x = nextX;
-            this.pacman.y = nextY;
-        } else {
-            // If next direction is invalid, try current direction
-            nextX = this.pacman.x;
-            nextY = this.pacman.y;
-            switch(this.pacman.direction) {
-                case 'up': 
-                    nextY -= this.pacman.speed;
-                    nextX = tileCenterX;
-                    break;
-                case 'down': 
-                    nextY += this.pacman.speed;
-                    nextX = tileCenterX;
-                    break;
-                case 'left': 
-                    nextX -= this.pacman.speed;
-                    nextY = tileCenterY;
-                    break;
-                case 'right': 
-                    nextX += this.pacman.speed;
-                    nextY = tileCenterY;
-                    break;
-            }
-            
-            // If current direction is valid, move
-            if (!this.maze.checkCollision(nextX, nextY, this.pacman.size)) {
-                this.pacman.x = nextX;
-                this.pacman.y = nextY;
-            }
-        }
+        // Set next direction based on key presses
+        if (this.keys['ArrowUp'] || this.keys['w']) this.pacman.nextDirection = 'up';
+        if (this.keys['ArrowDown'] || this.keys['s']) this.pacman.nextDirection = 'down';
+        if (this.keys['ArrowLeft'] || this.keys['a']) this.pacman.nextDirection = 'left';
+        if (this.keys['ArrowRight'] || this.keys['d']) this.pacman.nextDirection = 'right';
     }
 
     // Check if a tile is an intersection (has paths in multiple directions)
@@ -233,10 +162,34 @@ class Game {
         return pathCount >= 2;
     }
 
+    // Update score and display
+    updateScore(points) {
+        this.score += points;
+        this.scoreDisplay.textContent = this.score;
+    }
+
+    // Check for dot collection
+    checkDotCollection() {
+        const tileSize = this.maze.getTileSize();
+        const pacmanTileX = Math.floor(this.pacman.x / tileSize);
+        const pacmanTileY = Math.floor(this.pacman.y / tileSize);
+
+        // Check if Pac-Man is on a dot (value 0 in maze array)
+        if (this.maze.maze[pacmanTileY][pacmanTileX] === 0) {
+            // Change the dot to an empty path (value 2)
+            this.maze.maze[pacmanTileY][pacmanTileX] = 2;
+            // Add points for collecting a dot
+            this.updateScore(10);
+        }
+    }
+
     // Update game state
     update(deltaTime) {
         // Handle input and movement
         this.handleInput();
+
+        // Check for dot collection
+        this.checkDotCollection();
 
         // Update Pac-Man with maze reference
         this.pacman.update(this.maze);

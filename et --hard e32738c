@@ -1,0 +1,14 @@
+[33mf8b4cf0[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Updated maze walls and game canvas styling
+[33me32738c[m[33m ([m[1;31morigin/master[m[33m, [m[1;32mmaster[m[33m)[m Remove main field from package.json to fix Parcel build
+[33m768c6a4[m Fix Vercel configuration to use rewrites instead of routes
+[33m199d1d4[m Trigger new Vercel deployment
+[33mffbe89e[m Fix Vercel configuration version to 2
+[33m0aea690[m Update Vercel configuration version to trigger new deployment
+[33m31e7bbb[m Merge branch 'main'
+[33m5879f22[m Fix Parcel configuration and update Vercel settings for proper deployment
+[33m1584d7d[m Vercel deployment config - REVERTIBLE
+[33mb130783[m Merge pull request #4 from Zarniiiiiiiii/main
+[33mc4a75cb[m[33m ([m[1;31morigin/vercel-deployment[m[33m, [m[1;31morigin/backup-pre-vercel-changes[m[33m, [m[1;32mvercel-deployment[m[33m, [m[1;32mbackup-pre-vercel-changes[m[33m)[m Implement tunnel warping for Pac-Man and ghosts: - Add handleTunnels method to Maze class - Update Pac-Man and Ghost classes to use tunnel warping - Fix row index for tunnel warping (row 9) - Add proper position calculations for warping
+[33mc05627f[m Implement ghost following algorithm with personality-based targeting: - Red ghost (Blinky) directly pursues Pac-Man - Pink ghost (Pinky) ambushes by targeting 4 tiles ahead - Cyan ghost (Inky) uses unpredictable targeting based on Blinky's position - Orange ghost (Clyde) switches between pursuit and scatter based on distance
+[33m20ff2a5[m Initial commit: Working Pac-Man game with proper ghost movement and collision detection
+[33m1455bef[m Merge pull request #3 from Zarniiiiiiiii/main

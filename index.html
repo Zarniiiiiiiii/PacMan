@@ -7,8 +7,14 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="game-container">
-        <canvas id="gameCanvas"></canvas>
+    <div class="game-wrapper">
+        <div class="score-container">
+            <h2>SCORE</h2>
+            <div id="scoreDisplay">0</div>
+        </div>
+        <div class="game-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
     </div>
     <script type="module" src="game.js"></script>
 </body>

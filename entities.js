@@ -43,6 +43,70 @@ export class PacMan {
         // Toggle mouth animation
         this.mouthOpen = !this.mouthOpen;
         
+        const tileSize = maze.getTileSize();
+        const tileX = Math.floor(this.x / tileSize);
+        const tileY = Math.floor(this.y / tileSize);
+        const tileCenterX = tileX * tileSize + tileSize/2;
+        const tileCenterY = tileY * tileSize + tileSize/2;
+
+        // Check if Pac-Man is near the center of a tile
+        const isNearCenter = Math.abs(this.x - tileCenterX) < tileSize * 0.2 && 
+                            Math.abs(this.y - tileCenterY) < tileSize * 0.2;
+
+        // If near center of tile, check if we can change direction
+        if (isNearCenter) {
+            // Check if the next direction is valid
+            if (this.nextDirection !== this.direction) {
+                let nextX = tileX;
+                let nextY = tileY;
+                
+                switch(this.nextDirection) {
+                    case 'up': nextY--; break;
+                    case 'down': nextY++; break;
+                    case 'left': nextX--; break;
+                    case 'right': nextX++; break;
+                }
+
+                // If the next direction is valid, change direction
+                if (!maze.checkCollision(
+                    nextX * tileSize + tileSize/2,
+                    nextY * tileSize + tileSize/2,
+                    this.size
+                )) {
+                    this.direction = this.nextDirection;
+                }
+            }
+        }
+
+        // Move in current direction
+        let nextX = this.x;
+        let nextY = this.y;
+
+        switch(this.direction) {
+            case 'up':
+                nextY -= this.speed;
+                nextX = tileCenterX;
+                break;
+            case 'down':
+                nextY += this.speed;
+                nextX = tileCenterX;
+                break;
+            case 'left':
+                nextX -= this.speed;
+                nextY = tileCenterY;
+                break;
+            case 'right':
+                nextX += this.speed;
+                nextY = tileCenterY;
+                break;
+        }
+
+        // Check for collision before moving
+        if (!maze.checkCollision(nextX, nextY, this.size)) {
+            this.x = nextX;
+            this.y = nextY;
+        }
+        
         // Handle tunnel warping
         maze.handleTunnels(this);
     }
