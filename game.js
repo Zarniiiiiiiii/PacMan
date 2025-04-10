@@ -20,6 +20,7 @@ class Game {
             // Initialize score
             this.score = 0;
             this.scoreDisplay = document.getElementById('scoreDisplay');
+            this.scoreTitle = document.querySelector('.score-container h2');  // Add reference to score title
             if (!this.scoreDisplay) {
                 throw new Error('Score display element not found');
             }
@@ -279,8 +280,10 @@ class Game {
         this.score += points;
         if (this.gameWon) {
             this.scoreDisplay.innerHTML = '<span class="win-text">YOU WIN!</span><br>Final Score: ' + this.score;
+            this.scoreTitle.style.display = 'none';  // Hide score title when game is won
         } else {
             this.scoreDisplay.textContent = this.score;
+            this.scoreTitle.style.display = 'block';  // Show score title when game is not won
         }
     }
 
