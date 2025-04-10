@@ -133,6 +133,15 @@ export const GHOST_PERSONALITIES = {
     CLYDE: 3    // Orange - Defensive
 };
 
+// Add helper functions for animation
+function lerp(start, end, t) {
+    return start * (1-t) + end * t;
+}
+
+function easeOutQuad(t) {
+    return t * (2 - t);
+}
+
 // Ghost class for enemy characters
 export class Ghost {
     constructor(x, y, color, personality) {
@@ -164,6 +173,13 @@ export class Ghost {
         this.homePosition = { x: 9, y: 9 };  // Center of the ghost house
         this.initialPosition = { x: 9, y: 9 };  // Center of the ghost house
         this.maze = null;  // Will be set when updating
+        this.respawnTimer = null;
+        this.respawnDelay = 3000; // 3 seconds in ms
+        this.isEaten = false;
+        this.respawnStartTime = 0;
+        this.respawnProgress = 0;
+        this.normalSpeed = this.speed;
+        this.debug = false;
     }
 
     // Determine target based on personality and state
@@ -290,9 +306,50 @@ export class Ghost {
         return opposites[dir];
     }
 
+    moveToCenter() {
+        const centerX = 9 * this.maze.tileSize + this.maze.tileSize/2;
+        const centerY = 9 * this.maze.tileSize + this.maze.tileSize/2;
+        
+        // Simple pathfinding to center
+        if (this.x < centerX) this.x += this.speed;
+        else if (this.x > centerX) this.x -= this.speed;
+        
+        if (this.y < centerY) this.y += this.speed;
+        else if (this.y > centerY) this.y -= this.speed;
+        
+        // When reached center
+        if (Math.abs(this.x - centerX) < 2 && Math.abs(this.y - centerY) < 2) {
+            this.x = centerX;
+            this.y = centerY;
+        }
+    }
+
+    respawnGhost() {
+        if (this.state !== 'eaten') return;
+        
+        clearTimeout(this.respawnTimer);
+        this.state = 'scatter'; // Default to scatter mode after respawn
+        this.isEaten = false;
+        this.respawnProgress = 0;
+        this.speed = this.normalSpeed;
+        console.log(`Ghost ${this.color} has respawned`);
+    }
+
     update(maze, pacman, gameTime) {
         this.maze = maze;
         
+        // Handle eaten state and respawn
+        if (this.state === 'eaten') {
+            this.respawnProgress = (gameTime - this.respawnStartTime) * 1000;
+            this.moveToCenter();
+            
+            // Auto-respawn if timer fails
+            if (this.respawnProgress >= this.respawnDelay) {
+                this.respawnGhost();
+            }
+            return;
+        }
+
         // Handle exit timing
         if (!this.canExit) {
             if (gameTime >= this.exitDelay) {
@@ -374,14 +431,60 @@ export class Ghost {
         ctx.save();
         ctx.translate(this.x, this.y);
 
+        if (this.state === 'eaten') {
+            // Draw only eyes moving to center
+            const centerX = 9 * this.maze.tileSize + this.maze.tileSize/2;
+            const centerY = 9 * this.maze.tileSize + this.maze.tileSize/2;
+            
+            const progress = easeOutQuad(this.respawnProgress / this.respawnDelay);
+            const eyeX = lerp(this.x, centerX, progress);
+            const eyeY = lerp(this.y, centerY, progress);
+            
+            // Draw eyes at interpolated position
+            const eyeSize = this.size/4;
+            const eyeOffset = this.size/4;
+            
+            // Left eye
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-eyeOffset, -eyeOffset, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Right eye
+            ctx.beginPath();
+            ctx.arc(eyeOffset, -eyeOffset, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupils
+            ctx.fillStyle = '#000000';
+            const pupilSize = eyeSize/2;
+            ctx.beginPath();
+            ctx.arc(-eyeOffset, -eyeOffset, pupilSize, 0, Math.PI * 2);
+            ctx.arc(eyeOffset, -eyeOffset, pupilSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw respawn progress bar in debug mode
+            if (this.debug) {
+                const barWidth = this.size * 2;
+                const barHeight = 4;
+                const progressWidth = barWidth * (this.respawnProgress / this.respawnDelay);
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(-barWidth/2, -this.size - 10, barWidth, barHeight);
+                ctx.fillStyle = '#00FF00';
+                ctx.fillRect(-barWidth/2, -this.size - 10, progressWidth, barHeight);
+            }
+
+            ctx.restore();
+            return;
+        }
+
         // Set color based on state
         if (this.state === 'frightened') {
             // Flash between blue and white when frightened
             const flashRate = 0.2; // How fast the color flashes
             const isFlashing = Math.floor(this.frightenedTimer / flashRate) % 2 === 0;
             ctx.fillStyle = isFlashing ? '#FFFFFF' : '#0000FF';
-        } else if (this.state === 'eaten') {
-            ctx.fillStyle = '#FFFFFF'; // White when eaten
         } else {
             ctx.fillStyle = this.color;
         }

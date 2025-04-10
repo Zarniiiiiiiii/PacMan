@@ -84,7 +84,7 @@ class Game {
             this.ghosts = this.ghosts.map(data => data.ghost);
 
             this.gameTime = 0;  // Add game time tracking
-
+            
             // Set up event listeners
             this.resizeCanvas();
             window.addEventListener('resize', () => this.resizeCanvas());
@@ -98,6 +98,26 @@ class Game {
             window.addEventListener('keyup', (e) => {
                 this.keys[e.key] = false;
                 console.log('Key released:', e.key); // Debug log
+            });
+
+            // Initialize debug mode
+            this.debugMode = false;
+            
+            // Add debug key listener
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'd') {
+                    this.debugMode = !this.debugMode;
+                    this.ghosts.forEach(ghost => ghost.debug = this.debugMode);
+                    console.log('Debug mode:', this.debugMode ? 'ON' : 'OFF');
+                }
+                if (e.key === 'r' && this.debugMode) {
+                    // Force respawn all eaten ghosts
+                    this.ghosts.forEach(ghost => {
+                        if (ghost.state === 'eaten') {
+                            ghost.respawnGhost();
+                        }
+                    });
+                }
             });
 
             // Draw initial state
@@ -346,6 +366,14 @@ class Game {
         // Resize canvas to proper dimensions
         this.resizeCanvas();
 
+        // Clear any pending respawn timers
+        this.ghosts.forEach(ghost => {
+            if (ghost.respawnTimer) {
+                clearTimeout(ghost.respawnTimer);
+            }
+            ghost.debug = this.debugMode;
+        });
+
         // Redraw the initial state
         this.draw();
     }
@@ -396,24 +424,25 @@ class Game {
     // Check for collisions between Pac-Man and ghosts
     checkCollisions() {
         const pacmanSize = this.pacman.size;
-        const ghostSize = 15; // Ghost size is 15 pixels
+        const ghostSize = 15;
 
         this.ghosts.forEach(ghost => {
-            // Calculate distance between Pac-Man and ghost
             const dx = this.pacman.x - ghost.x;
             const dy = this.pacman.y - ghost.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // Check if collision occurred (using size/2 as radius)
             if (distance < (pacmanSize/2 + ghostSize/2)) {
                 if (ghost.state === 'frightened') {
                     // Ghost is eaten
                     ghost.state = 'eaten';
-                    ghost.x = 9 * this.maze.tileSize + this.maze.tileSize/2; // Reset to ghost house
-                    ghost.y = 9 * this.maze.tileSize + this.maze.tileSize/2;
-                    ghost.canExit = false; // Prevent immediate exit
+                    ghost.isEaten = true;
+                    ghost.respawnStartTime = this.gameTime;
+                    ghost.respawnTimer = setTimeout(() => {
+                        ghost.respawnGhost();
+                    }, ghost.respawnDelay);
                     this.score += 200;
                     this.updateScore(this.score);
+                    console.log(`Ghost ${ghost.color} eaten, respawning in 3s`);
                 } else if (ghost.state !== 'eaten') {
                     // Pac-Man is caught
                     this.resetGame();
