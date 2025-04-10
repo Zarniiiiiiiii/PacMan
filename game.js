@@ -17,6 +17,16 @@ class Game {
                 throw new Error('Could not get 2D context');
             }
 
+            // Initialize canvas persistence
+            this.initCanvasPersistence();
+
+            // Initialize resize handler
+            this.resizeTimeout = null;
+            this.initResizeHandler();
+
+            // Initialize DevTools detection
+            this.initDevToolsDetection();
+
             // Initialize score
             this.score = 0;
             this.scoreDisplay = document.getElementById('scoreDisplay');
@@ -572,6 +582,73 @@ class Game {
                 overlay.remove();
             }
         });
+    }
+
+    // Add new methods for canvas persistence and stability
+    initCanvasPersistence() {
+        // Handle context loss
+        this.canvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            console.warn('Canvas context lost - attempting recovery');
+            setTimeout(() => this.resetRenderer(), 500);
+        });
+
+        // Handle context restoration
+        this.canvas.addEventListener('webglcontextrestored', () => {
+            console.log('Canvas context restored');
+            this.resetRenderer();
+        });
+
+        // Add visual debug mode with black outline
+        this.canvas.style.outline = '2px solid rgba(0,0,0,0.5)';
+    }
+
+    initResizeHandler() {
+        // Debounced resize handler
+        window.addEventListener('resize', () => {
+            if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = setTimeout(() => {
+                this.resizeCanvas();
+                this.redrawMaze();
+            }, 200);
+        });
+    }
+
+    initDevToolsDetection() {
+        // Check for DevTools
+        const checkDevTools = () => {
+            const widthThreshold = 100;
+            const heightThreshold = 100;
+            
+            if (window.outerWidth - window.innerWidth > widthThreshold || 
+                window.outerHeight - window.innerHeight > heightThreshold) {
+                console.log('DevTools detected - enforcing render stability');
+                if (!this.forceRenderInterval) {
+                    this.forceRenderInterval = setInterval(() => this.draw(), 1000/60);
+                }
+            } else {
+                if (this.forceRenderInterval) {
+                    clearInterval(this.forceRenderInterval);
+                    this.forceRenderInterval = null;
+                }
+            }
+        };
+
+        // Check periodically for DevTools
+        setInterval(checkDevTools, 1000);
+        checkDevTools(); // Initial check
+    }
+
+    resetRenderer() {
+        console.log('Resetting renderer');
+        this.resizeCanvas();
+        this.redrawMaze();
+    }
+
+    redrawMaze() {
+        if (this.ctx) {
+            this.draw();
+        }
     }
 }
 
