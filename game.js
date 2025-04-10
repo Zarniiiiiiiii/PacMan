@@ -55,14 +55,36 @@ class Game {
             // Initialize Pac-Man at starting position
             this.pacman = new PacMan(tileSize * 1 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2);
 
-            // Initialize ghosts at their starting positions
+            // Create ghosts in the correct order with their specific properties
             this.ghosts = [
-                new Ghost(tileSize * 1 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#FF0000', GHOST_PERSONALITIES.BLINKY, 'right'),    // Red ghost - Blinky
-                new Ghost(tileSize * 18 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#FFB8DE', GHOST_PERSONALITIES.PINKY, 'left'),   // Pink ghost - Pinky
-                new Ghost(tileSize * 1 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#00FFDE', GHOST_PERSONALITIES.INKY, 'right'),   // Cyan ghost - Inky
-                new Ghost(tileSize * 18 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#FFB847', GHOST_PERSONALITIES.CLYDE, 'left')   // Orange ghost - Clyde
+                { // Red ghost (Blinky) - exits first
+                    ghost: new Ghost(9 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#FF0000', 'chase'),
+                    exitDelay: 0
+                },
+                { // Pink ghost (Pinky) - exits second
+                    ghost: new Ghost(10 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#FFB8DE', 'ambush'),
+                    exitDelay: 1.5
+                },
+                { // Cyan ghost (Inky) - exits third
+                    ghost: new Ghost(11 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#00FFDE', 'patrol'),
+                    exitDelay: 3.0
+                },
+                { // Orange ghost (Clyde) - exits last
+                    ghost: new Ghost(12 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#FFB847', 'random'),
+                    exitDelay: 4.5
+                }
             ];
-            
+
+            // Set exit delays for each ghost
+            this.ghosts.forEach(ghostData => {
+                ghostData.ghost.exitDelay = ghostData.exitDelay;
+            });
+
+            // Extract just the ghost objects for easier access
+            this.ghosts = this.ghosts.map(data => data.ghost);
+
+            this.gameTime = 0;  // Add game time tracking
+
             // Set up event listeners
             this.resizeCanvas();
             window.addEventListener('resize', () => this.resizeCanvas());
@@ -127,11 +149,31 @@ class Game {
             const newTileSize = this.maze.tileSize;
             this.pacman = new PacMan(newTileSize * 1 + newTileSize/2, newTileSize * 1 + newTileSize/2, newTileSize/2);
             this.ghosts = [
-                new Ghost(newTileSize * 1 + newTileSize/2, newTileSize * 1 + newTileSize/2, newTileSize/2, '#FF0000', GHOST_PERSONALITIES.BLINKY, 'right'),    // Red ghost - Blinky
-                new Ghost(newTileSize * 18 + newTileSize/2, newTileSize * 1 + newTileSize/2, newTileSize/2, '#FFB8DE', GHOST_PERSONALITIES.PINKY, 'left'),   // Pink ghost - Pinky
-                new Ghost(newTileSize * 1 + newTileSize/2, newTileSize * 18 + newTileSize/2, newTileSize/2, '#00FFDE', GHOST_PERSONALITIES.INKY, 'right'),   // Cyan ghost - Inky
-                new Ghost(newTileSize * 18 + newTileSize/2, newTileSize * 18 + newTileSize/2, newTileSize/2, '#FFB847', GHOST_PERSONALITIES.CLYDE, 'left')   // Orange ghost - Clyde
+                { // Red ghost (Blinky) - exits first
+                    ghost: new Ghost(9 * newTileSize + newTileSize/2, 9 * newTileSize + newTileSize/2, '#FF0000', 'chase'),
+                    exitDelay: 0
+                },
+                { // Pink ghost (Pinky) - exits second
+                    ghost: new Ghost(10 * newTileSize + newTileSize/2, 9 * newTileSize + newTileSize/2, '#FFB8DE', 'ambush'),
+                    exitDelay: 1.5
+                },
+                { // Cyan ghost (Inky) - exits third
+                    ghost: new Ghost(11 * newTileSize + newTileSize/2, 9 * newTileSize + newTileSize/2, '#00FFDE', 'patrol'),
+                    exitDelay: 3.0
+                },
+                { // Orange ghost (Clyde) - exits last
+                    ghost: new Ghost(12 * newTileSize + newTileSize/2, 9 * newTileSize + newTileSize/2, '#FFB847', 'random'),
+                    exitDelay: 4.5
+                }
             ];
+            
+            // Set exit delays for each ghost
+            this.ghosts.forEach(ghostData => {
+                ghostData.ghost.exitDelay = ghostData.exitDelay;
+            });
+            
+            // Extract just the ghost objects for easier access
+            this.ghosts = this.ghosts.map(data => data.ghost);
             
             console.log('Canvas resized:', {
                 width: this.canvas.width,
@@ -235,13 +277,38 @@ class Game {
         // Reset Pac-Man
         this.pacman = new PacMan(tileSize * 1 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2);
 
-        // Reset ghosts
+        // Reset ghosts with proper exit delays
         this.ghosts = [
-            new Ghost(tileSize * 1 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#FF0000', GHOST_PERSONALITIES.BLINKY, 'right'),
-            new Ghost(tileSize * 18 + tileSize/2, tileSize * 1 + tileSize/2, tileSize/2, '#FFB8DE', GHOST_PERSONALITIES.PINKY, 'left'),
-            new Ghost(tileSize * 1 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#00FFDE', GHOST_PERSONALITIES.INKY, 'right'),
-            new Ghost(tileSize * 18 + tileSize/2, tileSize * 18 + tileSize/2, tileSize/2, '#FFB847', GHOST_PERSONALITIES.CLYDE, 'left')
+            { // Red ghost (Blinky) - exits first
+                ghost: new Ghost(9 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#FF0000', 'chase'),
+                exitDelay: 0
+            },
+            { // Pink ghost (Pinky) - exits second
+                ghost: new Ghost(10 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#FFB8DE', 'ambush'),
+                exitDelay: 1.5
+            },
+            { // Cyan ghost (Inky) - exits third
+                ghost: new Ghost(11 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#00FFDE', 'patrol'),
+                exitDelay: 3.0
+            },
+            { // Orange ghost (Clyde) - exits last
+                ghost: new Ghost(12 * tileSize + tileSize/2, 9 * tileSize + tileSize/2, '#FFB847', 'random'),
+                exitDelay: 4.5
+            }
         ];
+
+        // Set exit delays for each ghost
+        this.ghosts.forEach(ghostData => {
+            ghostData.ghost.exitDelay = ghostData.exitDelay;
+            ghostData.ghost.canExit = false; // Reset exit state
+            ghostData.ghost.state = 'normal'; // Reset ghost state
+        });
+
+        // Extract just the ghost objects for easier access
+        this.ghosts = this.ghosts.map(data => data.ghost);
+
+        // Reset game time
+        this.gameTime = 0;
 
         // Resize canvas to proper dimensions
         this.resizeCanvas();
@@ -271,24 +338,55 @@ class Game {
     }
 
     // Update game state
-    update(deltaTime) {
-        if (this.gameStarted && !this.gameWon) {
-            // Handle input and movement
-            this.handleInput();
+    update() {
+        // Update game time
+        this.gameTime += 1/60; // Assuming 60 FPS
 
-            // Check for dot collection
-            this.checkDotCollection();
+        // Handle input for Pac-Man movement
+        this.handleInput();
 
-            // Update Pac-Man with maze reference
-            this.pacman.update(this.maze);
+        // Update Pac-Man
+        this.pacman.update(this.maze);
 
-            // Update ghosts with maze reference and Pac-Man position
-            const blinky = this.ghosts[0];
-            this.ghosts.forEach(ghost => ghost.update(this.maze, this.pacman, blinky));
+        // Check for dot collection
+        this.checkDotCollection();
 
-            // Check for win condition
-            this.checkWinCondition();
-        }
+        // Update ghosts in the correct order
+        this.ghosts.forEach(ghost => {
+            ghost.update(this.maze, this.pacman, this.gameTime);
+        });
+
+        // Check for collisions
+        this.checkCollisions();
+    }
+
+    // Check for collisions between Pac-Man and ghosts
+    checkCollisions() {
+        const pacmanSize = this.pacman.size;
+        const ghostSize = 15; // Ghost size is 15 pixels
+
+        this.ghosts.forEach(ghost => {
+            // Calculate distance between Pac-Man and ghost
+            const dx = this.pacman.x - ghost.x;
+            const dy = this.pacman.y - ghost.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Check if collision occurred (using size/2 as radius)
+            if (distance < (pacmanSize/2 + ghostSize/2)) {
+                if (ghost.state === 'frightened') {
+                    // Ghost is eaten
+                    ghost.state = 'eaten';
+                    ghost.x = 9 * this.maze.tileSize + this.maze.tileSize/2; // Reset to ghost house
+                    ghost.y = 9 * this.maze.tileSize + this.maze.tileSize/2;
+                    ghost.canExit = false; // Prevent immediate exit
+                    this.score += 200;
+                    this.updateScore(this.score);
+                } else if (ghost.state !== 'eaten') {
+                    // Pac-Man is caught
+                    this.resetGame();
+                }
+            }
+        });
     }
 
     // Draw everything on the canvas

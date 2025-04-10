@@ -15,7 +15,7 @@ export class Maze {
             [1,0,0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0,0,1],  // Row 6
             [1,1,1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1,1,1],  // Row 7
             [1,1,1,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,1,1],  // Row 8
-            [2,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,2],  // Row 9 (center line without dots)
+            [2,0,0,0,0,0,0,3,3,3,3,3,3,0,0,0,0,0,0,2],  // Row 9 (center line with ghost-only path)
             [1,0,1,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,0,1],  // Row 10
             [1,0,0,1,0,1,1,1,0,1,1,0,1,1,1,0,1,0,0,1],  // Row 11
             [1,1,0,1,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,1],  // Row 12
@@ -47,9 +47,9 @@ export class Maze {
                 const tileY = y * this.tileSize;
                 
                 // Draw walls as lines
-                if (tile === 1) {
-                    // Set color for all maze walls
-                    ctx.strokeStyle = '#0000FF';
+                if (tile === 1 || tile === 3) {
+                    // Set color for walls (blue for ghost-only paths)
+                    ctx.strokeStyle = tile === 3 ? '#0000FF' : '#0000FF';
 
                     // Check adjacent tiles to determine which walls to draw
                     const left = x > 0 ? this.maze[y][x-1] : 1;
@@ -58,7 +58,7 @@ export class Maze {
                     const bottom = y < this.maze.length - 1 ? this.maze[y+1][x] : 1;
 
                     // Draw top wall if there's no wall above
-                    if (top !== 1) {
+                    if (top !== 1 && top !== 3) {
                         ctx.beginPath();
                         ctx.moveTo(tileX, tileY + 1);
                         ctx.lineTo(tileX + this.tileSize, tileY + 1);
@@ -66,7 +66,7 @@ export class Maze {
                     }
 
                     // Draw right wall if there's no wall to the right
-                    if (right !== 1) {
+                    if (right !== 1 && right !== 3) {
                         ctx.beginPath();
                         ctx.moveTo(tileX + this.tileSize - 1, tileY);
                         ctx.lineTo(tileX + this.tileSize - 1, tileY + this.tileSize);
@@ -74,7 +74,7 @@ export class Maze {
                     }
 
                     // Draw bottom wall if there's no wall below
-                    if (bottom !== 1) {
+                    if (bottom !== 1 && bottom !== 3) {
                         ctx.beginPath();
                         ctx.moveTo(tileX, tileY + this.tileSize - 1);
                         ctx.lineTo(tileX + this.tileSize, tileY + this.tileSize - 1);
@@ -82,7 +82,7 @@ export class Maze {
                     }
 
                     // Draw left wall if there's no wall to the left
-                    if (left !== 1) {
+                    if (left !== 1 && left !== 3) {
                         ctx.beginPath();
                         ctx.moveTo(tileX + 1, tileY);
                         ctx.lineTo(tileX + 1, tileY + this.tileSize);
@@ -118,7 +118,7 @@ export class Maze {
     }
 
     // Check if a position collides with a wall
-    checkCollision(x, y, size) {
+    checkCollision(x, y, size, isGhost = false) {
         // Use a smaller hitbox size and buffer for more precise collision detection
         const hitboxSize = this.tileSize * 0.4; // Reduced from 0.45 to 0.4
         const buffer = 1; // Reduced buffer from 2 to 1
@@ -144,7 +144,13 @@ export class Maze {
         // Check the tiles that Pac-Man overlaps with
         for (let tileY = topTile; tileY <= bottomTile; tileY++) {
             for (let tileX = leftTile; tileX <= rightTile; tileX++) {
-                if (this.maze[tileY][tileX] === 1) {
+                const tile = this.maze[tileY][tileX];
+                // For ghosts, only 1s are walls
+                if (isGhost && tile === 1) {
+                    return true;
+                }
+                // For Pac-Man, both 1s and 3s are walls
+                if (!isGhost && (tile === 1 || tile === 3)) {
                     return true;
                 }
             }
