@@ -299,13 +299,7 @@ class Game {
     // Update score and display
     updateScore(points) {
         this.score += points;
-        if (this.gameWon) {
-            this.scoreDisplay.innerHTML = '<span class="win-text">YOU WIN!</span><br>Final Score: ' + this.score;
-            this.scoreTitle.style.display = 'none';  // Hide score title when game is won
-        } else {
-            this.scoreDisplay.textContent = this.score;
-            this.scoreTitle.style.display = 'block';  // Show score title when game is not won
-        }
+        this.scoreDisplay.textContent = this.score;
     }
 
     // Check for dot collection
