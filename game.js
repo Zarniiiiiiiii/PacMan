@@ -315,9 +315,11 @@ class Game {
             this.maze.maze[pacmanTileY][pacmanTileX] = 2;
             // Add points for collecting a special point
             this.updateScore(100);
-            // Make all ghosts frightened
+            // Make only ghosts outside the ghost house frightened
             this.ghosts.forEach(ghost => {
-                if (ghost.state !== 'eaten') {  // Only affect ghosts that aren't already eaten
+                // Check if ghost is outside the ghost house (y < 9 or y > 9)
+                const ghostTileY = Math.floor(ghost.y / tileSize);
+                if (ghost.state !== 'eaten' && ghostTileY !== 9) {
                     ghost.state = 'frightened';
                     ghost.frightenedTimer = 0;  // Reset the frightened timer
                 }
