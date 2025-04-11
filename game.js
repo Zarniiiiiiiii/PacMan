@@ -147,6 +147,17 @@ class Game {
             this.debugOverlay.className = 'debug-overlay';
             document.body.appendChild(this.debugOverlay);
 
+            // Add developer mode flag
+            this.developerMode = false;
+
+            // Add keyboard event listener for developer mode
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'v') {
+                    this.developerMode = !this.developerMode;
+                    console.log('Developer mode:', this.developerMode ? 'ON' : 'OFF');
+                }
+            });
+
             // Draw initial state once, but don't start the game loop
             this.draw();
         } catch (error) {
@@ -356,6 +367,7 @@ class Game {
         this.score = 0;
         this.updateScore(0);
         this.updateLivesDisplay();
+        this.developerMode = false; // Reset developer mode
 
         // Reset positions
         this.resetPositions();
@@ -427,9 +439,9 @@ class Game {
                     ghost.state = 'normal';
                     ghost.canExit = false;
                 } else {
-                    ghost.update(this.maze, this.pacman, this.gameTime);
+            ghost.update(this.maze, this.pacman, this.gameTime);
                 }
-            });
+        });
         }
 
         // Check for collisions
@@ -483,7 +495,42 @@ class Game {
         this.pacman.draw(this.ctx);
         
         // Draw ghosts
-        this.ghosts.forEach(ghost => ghost.draw(this.ctx));
+        this.ghosts.forEach(ghost => {
+            // Draw ghost target lines in developer mode
+            if (this.developerMode) {
+                const target = ghost.determineTarget(this.pacman);
+                this.ctx.beginPath();
+                this.ctx.moveTo(ghost.x, ghost.y);
+                this.ctx.lineTo(target.x, target.y);
+                this.ctx.strokeStyle = ghost.color;
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                
+                // Draw target point
+                this.ctx.beginPath();
+                this.ctx.arc(target.x, target.y, 3, 0, Math.PI * 2);
+                this.ctx.fillStyle = ghost.color;
+                this.ctx.fill();
+            }
+            
+            ghost.draw(this.ctx);
+        });
+        
+        // Draw score
+        this.drawScore();
+        
+        // Draw lives
+        this.drawLives();
+        
+        // Draw game over overlay if game is over
+        if (this.isGameOver) {
+            this.drawGameOver();
+        }
+        
+        // Draw start overlay if game hasn't started
+        if (!this.gameStarted) {
+            this.drawStartOverlay();
+        }
     }
 
     // Main game loop
@@ -691,6 +738,22 @@ class Game {
         if (this.ctx) {
             this.draw();
         }
+    }
+
+    drawScore() {
+        // Implementation of drawScore method
+    }
+
+    drawLives() {
+        // Implementation of drawLives method
+    }
+
+    drawGameOver() {
+        // Implementation of drawGameOver method
+    }
+
+    drawStartOverlay() {
+        // Implementation of drawStartOverlay method
     }
 }
 

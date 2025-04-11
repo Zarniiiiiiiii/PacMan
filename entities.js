@@ -188,24 +188,27 @@ export class Ghost {
             // In scatter mode, target the corner based on personality
             switch(this.personality) {
                 case 'chase':
-                    return { x: 19 * 20, y: 0 }; // Top right corner
+                    return { x: 19 * this.maze.tileSize, y: 0 }; // Top right corner
                 case 'ambush':
                     return { x: 0, y: 0 }; // Top left corner
                 case 'patrol':
-                    return { x: 19 * 20, y: 19 * 20 }; // Bottom right corner
+                    return { x: 19 * this.maze.tileSize, y: 19 * this.maze.tileSize }; // Bottom right corner
                 case 'random':
-                    return { x: 0, y: 19 * 20 }; // Bottom left corner
+                    return { x: 0, y: 19 * this.maze.tileSize }; // Bottom left corner
             }
         }
         if (this.state === 'frightened') {
             // Run away from Pac-Man
             return {
-                x: Math.random() * 19,
-                y: Math.random() * 19
+                x: Math.random() * 19 * this.maze.tileSize,
+                y: Math.random() * 19 * this.maze.tileSize
             };
         }
         if (this.state === 'eaten') {
-            return this.homePosition;
+            return {
+                x: this.homePosition.x * this.maze.tileSize + this.maze.tileSize/2,
+                y: this.homePosition.y * this.maze.tileSize + this.maze.tileSize/2
+            };
         }
 
         // Chase behavior based on personality
@@ -217,23 +220,27 @@ export class Ghost {
                 let targetX = pacman.x;
                 let targetY = pacman.y;
                 switch(pacman.direction) {
-                    case 'up': targetY -= 4; break;
-                    case 'down': targetY += 4; break;
-                    case 'left': targetX -= 4; break;
-                    case 'right': targetX += 4; break;
+                    case 'up': targetY -= 4 * this.maze.tileSize; break;
+                    case 'down': targetY += 4 * this.maze.tileSize; break;
+                    case 'left': targetX -= 4 * this.maze.tileSize; break;
+                    case 'right': targetX += 4 * this.maze.tileSize; break;
                 }
                 return { x: targetX, y: targetY };
             case 'patrol':
                 // Patrol around the maze
-                return this.scatterTargets[Math.floor(Math.random() * 4)];
+                const randomTarget = this.scatterTargets[Math.floor(Math.random() * 4)];
+                return {
+                    x: randomTarget.x * this.maze.tileSize + this.maze.tileSize/2,
+                    y: randomTarget.y * this.maze.tileSize + this.maze.tileSize/2
+                };
             case 'random':
                 // Random movement
                 return {
-                    x: Math.random() * 19,
-                    y: Math.random() * 19
+                    x: Math.random() * 19 * this.maze.tileSize,
+                    y: Math.random() * 19 * this.maze.tileSize
                 };
             default:
-                    return { x: pacman.x, y: pacman.y };
+                return { x: pacman.x, y: pacman.y };
         }
     }
 
@@ -252,11 +259,31 @@ export class Ghost {
         ].filter(dir => {
             const nextX = currentTileX + dir.x;
             const nextY = currentTileY + dir.y;
+            
+            // Check if the next position would be in the ghost house
+            const wouldBeInGhostHouse = nextY === 9 && nextX >= 9 && nextX <= 12;
+            
+            // Check if this is the exit tile (x=10, y=9)
+            const isExitTile = currentTileX === 10 && currentTileY === 9;
+            
+            // Only allow movement if:
+            // 1. Not colliding with walls
+            // 2. Either:
+            //    - Ghost is eaten (can always enter ghost house)
+            //    - Ghost is at the exit tile and moving up
+            //    - Ghost is currently in ghost house (can exit through exit tile)
+            //    - Ghost is outside and next position is not in ghost house
             return !maze.checkCollision(
                 nextX * tileSize + tileSize/2,
                 nextY * tileSize + tileSize/2,
                 this.size,
                 true  // isGhost = true
+            ) && (
+                this.state === 'eaten' ||
+                (isExitTile && dir.dir === 'up') ||
+                (currentTileY === 9 && currentTileX >= 9 && currentTileX <= 12 && 
+                 nextX === 10 && nextY === 8) ||
+                !wouldBeInGhostHouse
             );
         });
 
@@ -417,9 +444,27 @@ export class Ghost {
                 break;
         }
 
-        if (!maze.checkCollision(nextX, nextY, this.size, true)) {
+        // Check if the next position is in the ghost house
+        const nextTileX = Math.floor(nextX / tileSize);
+        const nextTileY = Math.floor(nextY / tileSize);
+        const isInGhostHouse = nextTileY === 9 && nextTileX >= 9 && nextTileX <= 12;
+        const isCurrentlyInGhostHouse = tileY === 9 && tileX >= 9 && tileX <= 12;
+
+        // Only allow movement if:
+        // 1. Not colliding with walls
+        // 2. Either:
+        //    - Ghost is eaten (can always enter ghost house)
+        //    - Ghost is currently in ghost house (can exit)
+        //    - Ghost is outside and next position is not in ghost house
+        if (!maze.checkCollision(nextX, nextY, this.size, true) && 
+            (this.state === 'eaten' || 
+             isCurrentlyInGhostHouse || 
+             !isInGhostHouse)) {
             this.x = nextX;
             this.y = nextY;
+        } else {
+            // If we hit a wall or can't enter ghost house, change direction
+            this.direction = this.chooseDirection(target, maze);
         }
 
         // Handle tunnel warping

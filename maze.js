@@ -205,12 +205,17 @@ export class Maze {
         for (let tileY = topTile; tileY <= bottomTile; tileY++) {
             for (let tileX = leftTile; tileX <= rightTile; tileX++) {
                 const tile = this.maze[tileY][tileX];
-                // For ghosts, only 1s are walls
-                if (isGhost && tile === 1) {
-                    return true;
+                
+                // For ghosts, check if the tile is a wall (1) and not part of the ghost house entrance
+                if (isGhost) {
+                    // Check if this is a ghost house wall (row 9, columns 9-12)
+                    const isGhostHouseWall = tileY === 9 && tileX >= 9 && tileX <= 12;
+                    if (tile === 1 && !isGhostHouseWall) {
+                        return true;
+                    }
                 }
                 // For Pac-Man, both 1s and 3s are walls
-                if (!isGhost && (tile === 1 || tile === 3)) {
+                else if (!isGhost && (tile === 1 || tile === 3)) {
                     return true;
                 }
             }
