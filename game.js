@@ -1,6 +1,7 @@
 // Import necessary classes from other files
 import { PacMan, Ghost, GHOST_PERSONALITIES, GHOST_STATES } from './entities.js';
 import { Maze } from './maze.js';
+import { virtualArrows } from './virtual-arrows.js';
 
 // Main Game class that handles the game loop, input, and rendering
 class Game {
@@ -245,26 +246,29 @@ class Game {
 
     // Handle keyboard input for Pac-Man movement
     handleInput() {
+        // Combine keyboard and virtual arrow keys
+        const allKeys = { ...this.keys, ...virtualArrows.keys };
+
         // Set next direction based on key presses
-        if (this.keys['ArrowUp'] || this.keys['w']) {
+        if (allKeys['ArrowUp'] || allKeys['w']) {
             this.pacman.nextDirection = 'up';
             if (!this.pacman.direction) {
                 this.pacman.direction = 'up';
             }
         }
-        if (this.keys['ArrowDown'] || this.keys['s']) {
+        if (allKeys['ArrowDown'] || allKeys['s']) {
             this.pacman.nextDirection = 'down';
             if (!this.pacman.direction) {
                 this.pacman.direction = 'down';
             }
         }
-        if (this.keys['ArrowLeft'] || this.keys['a']) {
+        if (allKeys['ArrowLeft'] || allKeys['a']) {
             this.pacman.nextDirection = 'left';
             if (!this.pacman.direction) {
                 this.pacman.direction = 'left';
             }
         }
-        if (this.keys['ArrowRight'] || this.keys['d']) {
+        if (allKeys['ArrowRight'] || allKeys['d']) {
             this.pacman.nextDirection = 'right';
             if (!this.pacman.direction) {
                 this.pacman.direction = 'right';
