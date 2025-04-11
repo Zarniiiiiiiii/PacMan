@@ -227,18 +227,36 @@ export class Ghost {
                 }
                 return { x: targetX, y: targetY };
             case 'patrol':
-                // Patrol around the maze
-                const randomTarget = this.scatterTargets[Math.floor(Math.random() * 4)];
+                // Inky's behavior: Target a point that's 2 tiles ahead of Pac-Man
+                // and then double that distance from Pac-Man's current position
+                let inkyTargetX = pacman.x;
+                let inkyTargetY = pacman.y;
+                switch(pacman.direction) {
+                    case 'up': inkyTargetY -= 2 * this.maze.tileSize; break;
+                    case 'down': inkyTargetY += 2 * this.maze.tileSize; break;
+                    case 'left': inkyTargetX -= 2 * this.maze.tileSize; break;
+                    case 'right': inkyTargetX += 2 * this.maze.tileSize; break;
+                }
+                // Double the distance from Pac-Man's current position
                 return {
-                    x: randomTarget.x * this.maze.tileSize + this.maze.tileSize/2,
-                    y: randomTarget.y * this.maze.tileSize + this.maze.tileSize/2
+                    x: pacman.x + (inkyTargetX - pacman.x) * 2,
+                    y: pacman.y + (inkyTargetY - pacman.y) * 2
                 };
             case 'random':
-                // Random movement
-                return {
-                    x: Math.random() * 19 * this.maze.tileSize,
-                    y: Math.random() * 19 * this.maze.tileSize
-                };
+                // Clyde's behavior: Chase Pac-Man when far away, scatter when close
+                const distanceToPacman = Math.hypot(
+                    this.x - pacman.x,
+                    this.y - pacman.y
+                );
+                const scatterDistance = 8 * this.maze.tileSize; // 8 tiles
+                
+                if (distanceToPacman > scatterDistance) {
+                    // Chase Pac-Man when far away
+                    return { x: pacman.x, y: pacman.y };
+                } else {
+                    // Scatter to bottom-left corner when close
+                    return { x: 0, y: 19 * this.maze.tileSize };
+                }
             default:
                 return { x: pacman.x, y: pacman.y };
         }
