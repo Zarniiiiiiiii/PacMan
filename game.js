@@ -2,162 +2,6 @@
 import { PacMan, Ghost, GHOST_PERSONALITIES, GHOST_STATES } from './entities.js';
 import { Maze } from './maze.js';
 
-// Virtual Joystick class
-class VirtualJoystick {
-    constructor(container, options = {}) {
-        this.container = container;
-        this.options = {
-            size: options.size || 100,
-            color: options.color || '#FFD700',
-            opacity: options.opacity || 0.5,
-            ...options
-        };
-
-        this.active = false;
-        this.position = { x: 0, y: 0 };
-        this.direction = { x: 0, y: 0 };
-        this.touchId = null;
-
-        this.createElements();
-        this.bindEvents();
-    }
-
-    createElements() {
-        // Create joystick container
-        this.joystickContainer = document.createElement('div');
-        this.joystickContainer.className = 'joystick-container';
-        this.joystickContainer.style.cssText = `
-            position: absolute;
-            bottom: 50px;
-            right: 50px;
-            width: ${this.options.size}px;
-            height: ${this.options.size}px;
-            opacity: ${this.options.opacity};
-            z-index: 1000;
-            touch-action: none;
-            pointer-events: auto;
-        `;
-
-        // Create joystick base
-        this.joystickBase = document.createElement('div');
-        this.joystickBase.className = 'joystick-base';
-        this.joystickBase.style.cssText = `
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: ${this.options.color};
-            border-radius: 50%;
-            opacity: 0.2;
-            pointer-events: none;
-        `;
-
-        // Create joystick handle
-        this.joystickHandle = document.createElement('div');
-        this.joystickHandle.className = 'joystick-handle';
-        this.joystickHandle.style.cssText = `
-            position: absolute;
-            width: 50%;
-            height: 50%;
-            background: ${this.options.color};
-            border-radius: 50%;
-            top: 25%;
-            left: 25%;
-            transition: transform 0.2s ease-out;
-            pointer-events: none;
-        `;
-
-        this.joystickContainer.appendChild(this.joystickBase);
-        this.joystickContainer.appendChild(this.joystickHandle);
-        this.container.appendChild(this.joystickContainer);
-    }
-
-    bindEvents() {
-        this.joystickContainer.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
-        this.joystickContainer.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
-        this.joystickContainer.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
-        this.joystickContainer.addEventListener('touchcancel', this.handleTouchEnd.bind(this), { passive: false });
-    }
-
-    handleTouchStart(e) {
-        e.preventDefault();
-        if (this.active) return;
-        
-        const touch = e.touches[0];
-        this.touchId = touch.identifier;
-        this.active = true;
-        this.updatePosition(touch);
-    }
-
-    handleTouchMove(e) {
-        if (!this.active) return;
-        e.preventDefault();
-        
-        // Find the correct touch by identifier
-        const touch = Array.from(e.touches).find(t => t.identifier === this.touchId);
-        if (touch) {
-            this.updatePosition(touch);
-        }
-    }
-
-    handleTouchEnd(e) {
-        e.preventDefault();
-        this.active = false;
-        this.touchId = null;
-        this.resetPosition();
-    }
-
-    updatePosition(touch) {
-        const rect = this.joystickContainer.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        
-        const deltaX = touch.clientX - centerX;
-        const deltaY = touch.clientY - centerY;
-        
-        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        const maxDistance = this.options.size / 2;
-        
-        if (distance > maxDistance) {
-            const angle = Math.atan2(deltaY, deltaX);
-            this.position.x = Math.cos(angle) * maxDistance;
-            this.position.y = Math.sin(angle) * maxDistance;
-        } else {
-            this.position.x = deltaX;
-            this.position.y = deltaY;
-        }
-        
-        this.direction.x = this.position.x / maxDistance;
-        this.direction.y = this.position.y / maxDistance;
-        
-        this.updateVisuals();
-    }
-
-    resetPosition() {
-        this.position = { x: 0, y: 0 };
-        this.direction = { x: 0, y: 0 };
-        this.updateVisuals();
-    }
-
-    updateVisuals() {
-        // If not active, reset to center
-        if (!this.active) {
-            this.joystickHandle.style.transform = 'translate(0px, 0px)';
-            return;
-        }
-        
-        // Apply the position offset
-        this.joystickHandle.style.transform = `translate(${this.position.x}px, ${this.position.y}px)`;
-    }
-
-    getDirection() {
-        return this.direction;
-    }
-
-    isActive() {
-        return this.active;
-    }
-}
-
 // Main Game class that handles the game loop, input, and rendering
 class Game {
     constructor() {
@@ -186,7 +30,7 @@ class Game {
             // Initialize score
             this.score = 0;
             this.scoreDisplay = document.getElementById('scoreDisplay');
-            this.scoreTitle = document.querySelector('.score-container h2');
+            this.scoreTitle = document.querySelector('.score-container h2');  // Add reference to score title
             if (!this.scoreDisplay) {
                 throw new Error('Score display element not found');
             }
@@ -313,23 +157,6 @@ class Game {
                     console.log('Developer mode:', this.developerMode ? 'ON' : 'OFF');
                 }
             });
-
-            // Get the game container
-            this.container = document.querySelector('.game-container');
-            if (!this.container) {
-                throw new Error('Game container not found');
-            }
-
-            // Initialize virtual joystick after container is set up
-            this.joystick = new VirtualJoystick(this.container, {
-                size: 150,
-                color: '#FFD700',
-                opacity: 0.5
-            });
-
-            // Add touch input handling
-            this.handleTouchInput = this.handleTouchInput.bind(this);
-            requestAnimationFrame(this.handleTouchInput);
 
             // Draw initial state once, but don't start the game loop
             this.draw();
@@ -472,7 +299,13 @@ class Game {
     // Update score and display
     updateScore(points) {
         this.score += points;
+        if (this.gameWon) {
+            this.scoreDisplay.innerHTML = '<span class="win-text">YOU WIN!</span><br>Final Score: ' + this.score;
+            this.scoreTitle.style.display = 'none';  // Hide score title when game is won
+        } else {
             this.scoreDisplay.textContent = this.score;
+            this.scoreTitle.style.display = 'block';  // Show score title when game is not won
+        }
     }
 
     // Check for dot collection
@@ -1012,38 +845,6 @@ class Game {
 
     drawStartOverlay() {
         // Implementation of drawStartOverlay method
-    }
-
-    handleTouchInput() {
-        if (this.joystick.isActive()) {
-            const direction = this.joystick.getDirection();
-            
-            // Determine the primary direction based on the joystick input
-            if (Math.abs(direction.x) > Math.abs(direction.y)) {
-                // Horizontal movement
-                if (direction.x > 0.5) {
-                    this.pacman.nextDirection = 'right';
-                    this.pacman.direction = 'right'; // Set both next and current direction
-                } else if (direction.x < -0.5) {
-                    this.pacman.nextDirection = 'left';
-                    this.pacman.direction = 'left';
-                }
-            } else {
-                // Vertical movement
-                if (direction.y > 0.5) {
-                    this.pacman.nextDirection = 'down';
-                    this.pacman.direction = 'down';
-                } else if (direction.y < -0.5) {
-                    this.pacman.nextDirection = 'up';
-                    this.pacman.direction = 'up';
-                }
-            }
-        } else if (this.pacman.direction) {
-            // If joystick is not active but Pac-Man is moving, keep the current direction
-            this.pacman.nextDirection = this.pacman.direction;
-        }
-        
-        requestAnimationFrame(this.handleTouchInput);
     }
 }
 
