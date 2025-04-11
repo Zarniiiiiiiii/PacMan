@@ -5,7 +5,8 @@ export class PacMan {
         this.x = x;          // X coordinate
         this.y = y;          // Y coordinate
         this.size = size;    // This is the collision size
-        this.speed = 3;      // Movement speed in pixels per frame
+        this.baseSpeed = 3;  // Base movement speed in pixels per frame
+        this.speed = this.baseSpeed;  // Current speed
         this.direction = null;  // No initial direction
         this.nextDirection = null;  // No initial next direction
         this.visualSize = size * 0.8; // Visual size is 80% of collision size
@@ -39,11 +40,14 @@ export class PacMan {
     }
 
     // Update Pac-Man's state
-    update(maze) {
+    update(maze, speedMultiplier = 1) {
         // Only update if there's a direction set
         if (!this.direction) {
             return;
         }
+
+        // Update speed based on multiplier
+        this.speed = this.baseSpeed * speedMultiplier;
 
         // Toggle mouth animation
         this.mouthOpen = !this.mouthOpen;
@@ -147,20 +151,24 @@ export class Ghost {
     constructor(x, y, color, personality) {
         this.x = x;
         this.y = y;
-        this.size = 15;  // Reduced from 20 to 15
-        this.speed = 2;
         this.color = color;
         this.personality = personality;
-        this.direction = 'up';
-        this.nextDirection = 'up';
+        this.baseSpeed = 2;
+        this.speed = this.baseSpeed;
+        this.direction = null;
         this.state = 'normal';
-        this.canExit = false;  // New property to control ghost exit
-        this.exitDelay = 2;    // New property to track exit delay
-        this.scatterStartTime = 0; // Track when scatter mode started
-        this.scatterDuration = 4; // 4 seconds scatter duration
-        this.frightenedTimer = 0; // Track frightened state duration
-        this.frightenedDuration = 5; // 5 seconds frightened duration
-        this.target = { x: 9, y: 9 };  // Initial target at ghost house center
+        this.size = 15;
+        this.exitDelay = 0;
+        this.canExit = false;
+        this.respawnTimer = null;
+        this.respawnDelay = 3000;
+        this.respawnStartTime = 0;
+        this.isEaten = false;
+        this.scatterStartTime = 0;
+        this.scatterDuration = 4;
+        this.frightenedTimer = 0;
+        this.frightenedDuration = 5;
+        this.target = { x: 9, y: 9 };
         this.scatterTimer = 0;
         this.scatterPhase = 0;
         this.scatterTargets = [
@@ -170,13 +178,9 @@ export class Ghost {
             { x: 0, y: 19 }      // Bottom-left
         ];
         this.returningHome = false;
-        this.homePosition = { x: 9, y: 9 };  // Center of the ghost house
-        this.initialPosition = { x: 9, y: 9 };  // Center of the ghost house
-        this.maze = null;  // Will be set when updating
-        this.respawnTimer = null;
-        this.respawnDelay = 3000; // 3 seconds in ms
-        this.isEaten = false;
-        this.respawnStartTime = 0;
+        this.homePosition = { x: 9, y: 9 };
+        this.initialPosition = { x: 9, y: 9 };
+        this.maze = null;
         this.respawnProgress = 0;
         this.normalSpeed = this.speed;
         this.debug = false;
@@ -380,9 +384,12 @@ export class Ghost {
         console.log(`Ghost ${this.color} has respawned`);
     }
 
-    update(maze, pacman, gameTime) {
+    update(maze, pacman, gameTime, speedMultiplier = 1) {
         this.maze = maze;
         
+        // Update speed based on multiplier
+        this.speed = this.baseSpeed * speedMultiplier;
+
         // Handle eaten state and respawn
         if (this.state === 'eaten') {
             this.respawnProgress = (gameTime - this.respawnStartTime) * 1000;

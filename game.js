@@ -2,6 +2,7 @@
 import { PacMan, Ghost, GHOST_PERSONALITIES, GHOST_STATES } from './entities.js';
 import { Maze } from './maze.js';
 import { virtualArrows } from './virtual-arrows.js';
+import { touchSpeed } from './touch-speed.js';
 
 // Main Game class that handles the game loop, input, and rendering
 class Game {
@@ -508,17 +509,20 @@ class Game {
     }
 
     // Update game state
-    update() {
+    update(deltaTime) {
         if (this.isGameOver) return;
 
-        // Update game time
-        this.gameTime += 1/60;
+        // Get speed multiplier for touch devices
+        const speedMultiplier = touchSpeed.getSpeedMultiplier();
+
+        // Update game time with speed multiplier
+        this.gameTime += (1/60) * speedMultiplier;
 
         // Handle input for Pac-Man movement
         this.handleInput();
 
-        // Update Pac-Man
-        this.pacman.update(this.maze);
+        // Update Pac-Man with speed multiplier
+        this.pacman.update(this.maze, speedMultiplier);
 
         // Check for dot collection
         this.checkDotCollection();
@@ -534,9 +538,9 @@ class Game {
                     ghost.state = 'normal';
                     ghost.canExit = false;
                 } else {
-            ghost.update(this.maze, this.pacman, this.gameTime);
+                    ghost.update(this.maze, this.pacman, this.gameTime, speedMultiplier);
                 }
-        });
+            });
         }
 
         // Check for collisions
@@ -641,13 +645,20 @@ class Game {
         const deltaTime = timestamp - this.lastTime;
         this.lastTime = timestamp;
 
+        // Get speed multiplier for touch devices
+        const speedMultiplier = touchSpeed.getSpeedMultiplier();
+        
+        // Apply speed multiplier to both deltaTime and timestep
+        const adjustedDeltaTime = deltaTime * speedMultiplier;
+        const adjustedTimestep = this.timestep * speedMultiplier;
+
         // Accumulate time for fixed timestep updates
-        this.accumulator += deltaTime;
+        this.accumulator += adjustedDeltaTime;
 
         // Update game state at fixed intervals
-        while (this.accumulator >= this.timestep) {
-            this.update(this.timestep);
-            this.accumulator -= this.timestep;
+        while (this.accumulator >= adjustedTimestep) {
+            this.update(adjustedTimestep);
+            this.accumulator -= adjustedTimestep;
         }
 
         // Draw everything
