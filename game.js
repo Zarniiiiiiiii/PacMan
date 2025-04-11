@@ -416,8 +416,17 @@ class Game {
 
         // Only update ghosts if the game has started
         if (this.gameStarted) {
-            this.ghosts.forEach(ghost => {
-                ghost.update(this.maze, this.pacman, this.gameTime);
+            this.ghosts.forEach((ghost, index) => {
+                // If ghost hasn't reached its exit delay, keep it in its initial position
+                if (this.gameTime < ghost.exitDelay) {
+                    const tileSize = this.maze.getTileSize();
+                    ghost.x = (9 + index) * tileSize + tileSize/2;  // Maintain position in ghost house
+                    ghost.y = 9 * tileSize + tileSize/2;
+                    ghost.state = 'normal';
+                    ghost.canExit = false;
+                } else {
+                    ghost.update(this.maze, this.pacman, this.gameTime);
+                }
             });
         }
 
@@ -554,12 +563,33 @@ class Game {
         this.pacman.direction = null;
         this.pacman.nextDirection = null;
 
-        // Reset ghosts
+        // Reset ghosts to their initial positions
+        this.ghosts[0].x = 9 * tileSize + tileSize/2;  // Blinky
+        this.ghosts[0].y = 9 * tileSize + tileSize/2;
+        this.ghosts[0].state = 'normal';
+        this.ghosts[0].canExit = false;
+        this.ghosts[0].exitDelay = 0;
+
+        this.ghosts[1].x = 10 * tileSize + tileSize/2;  // Pinky
+        this.ghosts[1].y = 9 * tileSize + tileSize/2;
+        this.ghosts[1].state = 'normal';
+        this.ghosts[1].canExit = false;
+        this.ghosts[1].exitDelay = 1.5;
+
+        this.ghosts[2].x = 11 * tileSize + tileSize/2;  // Inky
+        this.ghosts[2].y = 9 * tileSize + tileSize/2;
+        this.ghosts[2].state = 'normal';
+        this.ghosts[2].canExit = false;
+        this.ghosts[2].exitDelay = 3.0;
+
+        this.ghosts[3].x = 12 * tileSize + tileSize/2;  // Clyde
+        this.ghosts[3].y = 9 * tileSize + tileSize/2;
+        this.ghosts[3].state = 'normal';
+        this.ghosts[3].canExit = false;
+        this.ghosts[3].exitDelay = 4.5;
+
+        // Clear any pending timers
         this.ghosts.forEach(ghost => {
-            ghost.x = 9 * tileSize + tileSize/2;
-            ghost.y = 9 * tileSize + tileSize/2;
-            ghost.state = 'normal';
-            ghost.canExit = false;
             if (ghost.respawnTimer) {
                 clearTimeout(ghost.respawnTimer);
             }
