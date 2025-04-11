@@ -321,6 +321,14 @@ class Game {
             this.maze.maze[pacmanTileY][pacmanTileX] = 2;
             // Add points for collecting a dot
             this.updateScore(10);
+            
+            // Check if all dots are collected
+            if (this.maze.getRemainingDots() === 0) {
+                this.gameWon = true;
+                this.gameStarted = false;
+                this.showWinBanner();
+                console.log('All dots collected! Showing win banner...');
+            }
         } else if (tile === 4) {
             // Change the special point to an empty path (value 2)
             this.maze.maze[pacmanTileY][pacmanTileX] = 2;
@@ -340,10 +348,49 @@ class Game {
 
     // Check for win condition
     checkWinCondition() {
-        if (!this.gameWon && this.maze.getRemainingDots() === 0) {
+        if (this.maze.getRemainingDots() === 0) {
             this.gameWon = true;
-            this.updateScore(0); // Update display to show win message
+            this.gameStarted = false;
+            this.showWinBanner();
+            console.log('Game won! Showing win banner...');
         }
+    }
+
+    showWinBanner() {
+        // Remove any existing overlays first
+        const existingOverlay = document.querySelector('.win-overlay');
+        if (existingOverlay) {
+            existingOverlay.remove();
+        }
+
+        // Try to find the game container
+        const gameContainer = document.querySelector('.game-container');
+        if (!gameContainer) {
+            console.error('Game container not found!');
+            return;
+        }
+
+        console.log('Creating win banner...');
+        const overlay = document.createElement('div');
+        overlay.className = 'win-overlay';
+        
+        const winText = document.createElement('div');
+        winText.className = 'win-text';
+        winText.textContent = 'YOU WIN!';
+        
+        const restartButton = document.createElement('button');
+        restartButton.className = 'restart-button';
+        restartButton.textContent = 'Play Again';
+        restartButton.onclick = () => {
+            this.resetGame();
+            overlay.remove();
+        };
+        
+        overlay.appendChild(winText);
+        overlay.appendChild(restartButton);
+        gameContainer.appendChild(overlay);
+        
+        console.log('Win banner added to game container');
     }
 
     // Start the game
@@ -398,18 +445,62 @@ class Game {
             this.startGame();
         }
         
+        console.log('Starting to collect all dots...');
+        let dotsCollected = 0;
+        
         // Collect all dots
         for (let y = 0; y < this.maze.maze.length; y++) {
             for (let x = 0; x < this.maze.maze[y].length; x++) {
                 if (this.maze.maze[y][x] === 0) {
                     this.maze.maze[y][x] = 2;
                     this.updateScore(10);
+                    dotsCollected++;
                 }
             }
         }
         
-        // Check win condition
-        this.checkWinCondition();
+        console.log(`Collected ${dotsCollected} dots`);
+        console.log('Remaining dots:', this.maze.getRemainingDots());
+        
+        // Force win condition
+        this.gameWon = true;
+        this.gameStarted = false;
+        
+        // Remove any existing overlays
+        const existingOverlay = document.querySelector('.win-overlay');
+        if (existingOverlay) {
+            existingOverlay.remove();
+        }
+        
+        // Create and show win banner
+        const gameContainer = document.querySelector('.game-container');
+        if (!gameContainer) {
+            console.error('Game container not found!');
+            return;
+        }
+        
+        console.log('Creating win banner...');
+        const overlay = document.createElement('div');
+        overlay.className = 'win-overlay';
+        
+        const winText = document.createElement('div');
+        winText.className = 'win-text';
+        winText.textContent = 'YOU WIN!';
+        
+        const restartButton = document.createElement('button');
+        restartButton.className = 'restart-button';
+        restartButton.textContent = 'Play Again';
+        restartButton.onclick = () => {
+            this.resetGame();
+            overlay.remove();
+        };
+        
+        overlay.appendChild(winText);
+        overlay.appendChild(restartButton);
+        gameContainer.appendChild(overlay);
+        
+        console.log('Win banner added to game container');
+        console.log('Game container children:', gameContainer.children);
     }
 
     // Update game state
@@ -475,8 +566,8 @@ class Game {
                     this.score += 200;
                     this.updateScore(this.score);
                     console.log(`Ghost ${ghost.color} eaten, respawning in 3s`);
-                } else if (ghost.state !== 'eaten' && !this.pacmanInvulnerable) {
-                    // Pac-Man is caught
+                } else if (ghost.state !== 'eaten' && !this.pacmanInvulnerable && !this.developerMode) {
+                    // Pac-Man is caught (only if not in developer mode)
                     this.handleDeath();
                 }
             }
